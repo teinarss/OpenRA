@@ -121,6 +121,8 @@ namespace OpenRA
 			defaultVisibility = Trait<IDefaultVisibility>();
 			Targetables = TraitsImplementing<ITargetable>().ToArray();
 			targetablePositions = TraitsImplementing<ITargetablePositions>().ToArray();
+			Crushables = TraitsImplementing<ICrushable>().ToArray();
+
 			world.AddFrameEndTask(w =>
 			{
 				// Caching this in a AddFrameEndTask, because trait construction order might cause problems if done directly at creation time.
@@ -132,6 +134,8 @@ namespace OpenRA
 
 			SyncHashes = TraitsImplementing<ISync>().Select(sync => new SyncHash(sync)).ToArray();
 		}
+
+		public ICrushable[] Crushables { get; set; }
 
 		public void Tick()
 		{

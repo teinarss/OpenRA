@@ -75,8 +75,8 @@ namespace OpenRA.Mods.Cnc.UtilityCommands
 				}
 			}
 
-			for (var j = 0; j < MapSize; j++)
-				for (var i = 0; i < MapSize; i++)
+			for (short j = 0; j < MapSize; j++)
+				for (short i = 0; i < MapSize; i++)
 					Map.Tiles[new CPos(i, j)] = new TerrainTile(types[i, j], ms.ReadUInt8());
 		}
 
@@ -91,9 +91,9 @@ namespace OpenRA.Mods.Cnc.UtilityCommands
 
 		void UnpackOverlayData(MemoryStream ms)
 		{
-			for (var j = 0; j < MapSize; j++)
+			for (short j = 0; j < MapSize; j++)
 			{
-				for (var i = 0; i < MapSize; i++)
+				for (short i = 0; i < MapSize; i++)
 				{
 					var o = ms.ReadUInt8();
 					var res = Pair.New((byte)0, (byte)0);
@@ -126,7 +126,7 @@ namespace OpenRA.Mods.Cnc.UtilityCommands
 
 		public override CPos ParseActorLocation(string input, int loc)
 		{
-			var newLoc = new CPos(loc % MapSize, loc / MapSize);
+			var newLoc = new CPos((short) (loc % MapSize), (short) (loc / MapSize));
 			var vectorDown = new CVec(0, 1);
 
 			if (input == "tsla" || input == "agun" || input == "gap" || input == "apwr" || input == "iron")

@@ -45,7 +45,7 @@ namespace OpenRA
 		public CPos ToCPos(MapGridType gridType)
 		{
 			if (gridType == MapGridType.Rectangular)
-				return new CPos(U, V);
+				return new CPos((short) U, (short) V);
 
 			// Convert from rectangular map position to RectangularIsometric cell position
 			//  - The staggered rows make this fiddly (hint: draw a diagram!)
@@ -59,7 +59,7 @@ namespace OpenRA
 			var offset = (V & 1) == 1 ? 1 : 0;
 			var y = (V - offset) / 2 - U;
 			var x = V - y;
-			return new CPos(x, y);
+			return new CPos((short) x, (short) y);
 		}
 	}
 

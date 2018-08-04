@@ -73,7 +73,7 @@ namespace OpenRA.Mods.Common.AI
 			{
 				for (var j = 0; j < y; j += dangerRadius * 2)
 				{
-					var pos = new CPos(i, j);
+					var pos = new CPos((short) i, (short) j);
 					if (NearToPosSafely(owner, map.CenterOfCell(pos), out detectedEnemyTarget))
 					{
 						if (needTarget && detectedEnemyTarget == null)

@@ -250,6 +250,7 @@ World:
 		InitialSpawnDelay: 1500
 		CheckboxDisplayOrder: 1
 	PathFinder:
+	CellMovementCostIndex:
 	ValidateOrder:
 	DebugPauseState:
 	ObjectivesPanel:

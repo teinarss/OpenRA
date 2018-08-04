@@ -56,7 +56,7 @@ namespace OpenRA.Mods.Common.Traits
 			// This makes the production timing independent of spawnpoint
 			var dropPos = exit != null ? self.Location + exit.ExitCell : self.Location;
 			var startPos = dropPos + new CVec(owner.World.Map.Bounds.Width, 0);
-			var endPos = new CPos(owner.World.Map.Bounds.Left - 5, dropPos.Y);
+			var endPos = new CPos((short) (owner.World.Map.Bounds.Left - 5), dropPos.Y);
 
 			foreach (var notify in self.TraitsImplementing<INotifyDelivery>())
 				notify.IncomingDelivery(self);

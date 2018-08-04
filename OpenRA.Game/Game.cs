@@ -19,6 +19,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using OpenRA.Graphics;
@@ -166,6 +167,9 @@ namespace OpenRA
 				OrderManager.World = new World(ModData, map, OrderManager, type);
 
 			worldRenderer = new WorldRenderer(ModData, OrderManager.World);
+
+
+			
 
 			GC.Collect();
 

@@ -18,7 +18,7 @@ namespace OpenRA.Mods.Common.Scripting
 		public CPosGlobal(ScriptContext context) : base(context) { }
 
 		[Desc("Create a new CPos with the specified coordinates.")]
-		public CPos New(int x, int y) { return new CPos(x, y); }
+		public CPos New(int x, int y) { return new CPos((short) x, (short) y); }
 
 		[Desc("The cell coordinate origin.")]
 		public CPos Zero { get { return CPos.Zero; } }

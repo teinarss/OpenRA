@@ -53,7 +53,7 @@ namespace OpenRA.Mods.Cnc.Traits
 			// Start a fixed distance away: the width of the map.
 			// This makes the production timing independent of spawnpoint
 			var startPos = self.Location + new CVec(owner.World.Map.Bounds.Width, 0);
-			var endPos = new CPos(owner.World.Map.Bounds.Left - 2 * landDistance / 1024, self.Location.Y);
+			var endPos = new CPos((short) (owner.World.Map.Bounds.Left - 2 * landDistance / 1024), self.Location.Y);
 
 			// Assume a single exit point for simplicity
 			var exit = self.Info.TraitInfos<ExitInfo>().First();

@@ -70,7 +70,7 @@ namespace OpenRA.Mods.Common.Traits
 
 		public bool CanEnterCell(World world, Actor self, CPos cell, Actor ignoreActor = null, bool checkTransientActors = true)
 		{
-			if (LocomotorInfo.MovementCostForCell(world, cell) == int.MaxValue)
+			if (LocomotorInfo.MovementCostForCell(world, cell) == short.MaxValue)
 				return false;
 
 			var check = checkTransientActors ? CellConditions.All : CellConditions.BlockedByMovers;
@@ -88,12 +88,8 @@ namespace OpenRA.Mods.Common.Traits
 	public class Mobile : ConditionalTrait<MobileInfo>, INotifyCreated, IIssueOrder, IResolveOrder, IOrderVoice, IPositionable, IMove,
 		IFacing, IDeathActorInitModifier, INotifyAddedToWorld, INotifyRemovedFromWorld, INotifyBlockingMove, IActorPreviewInitModifier, INotifyBecomingIdle
 	{
-		const int AverageTicksBeforePathing = 5;
-		const int SpreadTicksBeforePathing = 5;
-		internal int TicksBeforePathing = 0;
-
 		readonly Actor self;
-		readonly Lazy<IEnumerable<int>> speedModifiers;
+		readonly Lazy<int[]> speedModifiers;
 
 		#region IMove IsMoving checks
 		public bool IsMoving { get; set; }
@@ -142,7 +138,7 @@ namespace OpenRA.Mods.Common.Traits
 		{
 			self = init.Self;
 
-			speedModifiers = Exts.Lazy(() => self.TraitsImplementing<ISpeedModifier>().ToArray().Select(x => x.GetSpeedModifier()));
+			speedModifiers = Exts.Lazy(() => self.TraitsImplementing<ISpeedModifier>().Select(x => x.GetSpeedModifier()).ToArray());
 
 			ToSubCell = FromSubCell = info.LocomotorInfo.SharesCell ? init.World.Map.Grid.DefaultSubCell : SubCell.FullCell;
 			if (init.Contains<SubCellInit>())
@@ -341,7 +337,7 @@ namespace OpenRA.Mods.Common.Traits
 
 		public bool CanExistInCell(CPos cell)
 		{
-			return Info.LocomotorInfo.MovementCostForCell(self.World, cell) != int.MaxValue;
+			return Info.LocomotorInfo.MovementCostForCell(self.World, cell) != short.MaxValue;
 		}
 
 		public bool CanEnterCell(CPos cell, Actor ignoreActor = null, bool checkTransientActors = true)
@@ -394,7 +390,7 @@ namespace OpenRA.Mods.Common.Traits
 
 		bool AnyCrushables(List<Actor> actors)
 		{
-			var crushables = actors.SelectMany(a => a.TraitsImplementing<ICrushable>().Select(t => new TraitPair<ICrushable>(a, t))).ToList();
+			var crushables = actors.SelectMany(a => a.Crushables.Select(t => new TraitPair<ICrushable>(a, t))).ToList();
 			if (crushables.Count == 0)
 				return false;
 
@@ -493,9 +489,9 @@ namespace OpenRA.Mods.Common.Traits
 			if (terrainSpeed == 0)
 				return 0;
 
-			var modifiers = speedModifiers.Value.Append(terrainSpeed);
+			var modifiers = speedModifiers.Value.AppendArray(terrainSpeed);
 
-			return Util.ApplyPercentageModifiers(Info.Speed, modifiers);
+			return Util.ApplyPercentageModifiersUnsafe(Info.Speed, modifiers);
 		}
 
 		public CPos NearestMoveableCell(CPos target, int minRange, int maxRange)
@@ -640,8 +636,6 @@ namespace OpenRA.Mods.Common.Traits
 				if (!order.Queued)
 					self.CancelActivity();
 
-				TicksBeforePathing = AverageTicksBeforePathing + self.World.SharedRandom.Next(-SpreadTicksBeforePathing, SpreadTicksBeforePathing);
-
 				self.SetTargetLine(Target.FromCell(self.World, loc), Color.Green);
 				self.QueueActivity(order.Queued, new Move(self, loc, WDist.FromCells(8), null, true));
 			}
@@ -704,7 +698,7 @@ namespace OpenRA.Mods.Common.Traits
 
 				if (mobile.IsTraitDisabled
 					|| (!explored && !locomotorInfo.MoveIntoShroud)
-					|| (explored && locomotorInfo.MovementCostForCell(self.World, location) == int.MaxValue))
+					|| (explored && locomotorInfo.MovementCostForCell(self.World, location) == short.MaxValue))
 					cursor = mobile.Info.BlockedCursor;
 
 				return true;

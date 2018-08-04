@@ -198,11 +198,11 @@ namespace OpenRA.Mods.Common.Activities
 
 			if (path == null)
 			{
-				if (mobile.TicksBeforePathing > 0)
-				{
-					--mobile.TicksBeforePathing;
-					return this;
-				}
+				//if (mobile.TicksBeforePathing > 0)
+				//{
+				//	--mobile.TicksBeforePathing;
+				//	return this;
+				//}
 
 				path = EvalPath();
 				SanityCheckPath(mobile);
@@ -310,11 +310,11 @@ namespace OpenRA.Mods.Common.Activities
 				if (--waitTicksRemaining >= 0)
 					return null;
 
-				if (mobile.TicksBeforePathing > 0)
-				{
-					--mobile.TicksBeforePathing;
-					return null;
-				}
+				//if (mobile.TicksBeforePathing > 0)
+				//{
+				//	--mobile.TicksBeforePathing;
+				//	return null;
+				//}
 
 				// Calculate a new path
 				mobile.RemoveInfluence();

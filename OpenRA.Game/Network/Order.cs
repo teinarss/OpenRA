@@ -126,7 +126,7 @@ namespace OpenRA
 									{
 										if (flags.HasField(OrderFields.TargetIsCell))
 										{
-											var cell = new CPos(r.ReadInt32(), r.ReadInt32(), r.ReadByte());
+											var cell = new CPos(r.ReadInt16(), r.ReadInt16(), r.ReadByte());
 											var subCell = (SubCell)r.ReadInt32();
 											if (world != null)
 												target = Target.FromCell(world, cell, subCell);
@@ -144,7 +144,7 @@ namespace OpenRA
 
 						var targetString = flags.HasField(OrderFields.TargetString) ? r.ReadString() : null;
 						var queued = flags.HasField(OrderFields.Queued);
-						var extraLocation = flags.HasField(OrderFields.ExtraLocation) ? new CPos(r.ReadInt32(), r.ReadInt32(), r.ReadByte()) : CPos.Zero;
+						var extraLocation = flags.HasField(OrderFields.ExtraLocation) ? new CPos((short) r.ReadInt32(), (short) r.ReadInt32(), r.ReadByte()) : CPos.Zero;
 						var extraData = flags.HasField(OrderFields.ExtraData) ? r.ReadUInt32() : 0;
 
 						if (world == null)

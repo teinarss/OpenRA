@@ -157,7 +157,7 @@ namespace OpenRA.Mods.Common.AI
 				for (var j = 0 - extendedRange; j <= (checkRadius + extendedRange); j += fineCheck)
 				{
 					var y = checkPos.Y + j;
-					var pos = world.Map.CenterOfCell(new CPos(x, y));
+					var pos = world.Map.CenterOfCell(new CPos((short) x, (short) y));
 					var consideredAttractiveness = 0;
 					consideredAttractiveness += powerDecision.GetAttractiveness(pos, player, frozenLayer);
 
@@ -165,7 +165,7 @@ namespace OpenRA.Mods.Common.AI
 						continue;
 
 					bestAttractiveness = consideredAttractiveness;
-					bestLocation = new CPos(x, y);
+					bestLocation = new CPos((short) x, (short) y);
 				}
 			}
 

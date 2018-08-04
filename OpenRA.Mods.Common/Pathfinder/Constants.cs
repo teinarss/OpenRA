@@ -18,15 +18,15 @@ namespace OpenRA.Mods.Common.Pathfinder
 		/// (125 according to runtime tests where we could assess the cost
 		/// a unit took to move one cell horizontally)
 		/// </summary>
-		public const int CellCost = 125;
+		public const short CellCost = 125;
 
 		/// <summary>
 		/// Min cost to arrive from once cell to a diagonal adjacent one
 		/// (125 * Sqrt(2) according to runtime tests where we could assess the cost
 		/// a unit took to move one cell diagonally)
 		/// </summary>
-		public const int DiagonalCellCost = 177;
+		public const short DiagonalCellCost = 177;
 
-		public const int InvalidNode = int.MaxValue;
+		public const short InvalidNode = short.MaxValue;
 	}
 }

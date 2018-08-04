@@ -58,9 +58,9 @@ namespace OpenRA.Mods.Cnc.UtilityCommands
 
 		void UnpackTileData(Stream ms)
 		{
-			for (var j = 0; j < MapSize; j++)
+			for (short j = 0; j < MapSize; j++)
 			{
-				for (var i = 0; i < MapSize; i++)
+				for (short i = 0; i < MapSize; i++)
 				{
 					var type = ms.ReadUInt8();
 					var index = ms.ReadUInt8();
@@ -87,7 +87,7 @@ namespace OpenRA.Mods.Cnc.UtilityCommands
 			foreach (var kv in overlay)
 			{
 				var loc = Exts.ParseIntegerInvariant(kv.Key);
-				var cell = new CPos(loc % MapSize, loc / MapSize);
+				var cell = new CPos((short) (loc % MapSize), (short) (loc / MapSize));
 
 				var res = Pair.New((byte)0, (byte)0);
 				var type = kv.Value.ToLowerInvariant();
@@ -116,7 +116,7 @@ namespace OpenRA.Mods.Cnc.UtilityCommands
 
 		public override CPos ParseActorLocation(string input, int loc)
 		{
-			var newLoc = new CPos(loc % MapSize, loc / MapSize);
+			var newLoc = new CPos((short) (loc % MapSize), (short) (loc / MapSize));
 			var vectorDown = new CVec(0, 1);
 
 			if (input == "obli" || input == "atwr" || input == "weap" || input == "hand" || input == "tmpl" || input == "split2" || input == "split3")

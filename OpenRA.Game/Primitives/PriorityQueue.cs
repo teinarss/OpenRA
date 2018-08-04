@@ -11,6 +11,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
 namespace OpenRA.Primitives
 {
@@ -62,7 +63,9 @@ namespace OpenRA.Primitives
 
 		public bool Empty { get { return level == 0; } }
 
+		//[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		T At(int level, int index) { return items[level][index]; }
+		//[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		T Above(int level, int index) { return items[level - 1][index >> 1]; }
 
 		T Last()
@@ -92,6 +95,7 @@ namespace OpenRA.Primitives
 			return ret;
 		}
 
+		//[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		void BubbleInto(int intoLevel, int intoIndex, T val)
 		{
 			var downLevel = intoLevel + 1;

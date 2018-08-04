@@ -282,7 +282,7 @@ namespace OpenRA.Traits
 		Pair<CPos, SubCell>[] OccupiedCells();
 	}
 
-	public enum SubCell { Invalid = int.MinValue, Any = int.MinValue / 2, FullCell = 0, First = 1 }
+	public enum SubCell { Invalid = short.MinValue, Any = short.MinValue / 2, FullCell = 0, First = 1 }
 
 	public interface IPositionableInfo : IOccupySpaceInfo
 	{
@@ -314,6 +314,17 @@ namespace OpenRA.Traits
 	{
 		int TurnSpeed { get; }
 		int Facing { get; set; }
+	}
+
+	[RequireExplicitImplementation]
+	public interface ICrushable
+	{
+		bool CrushableBy(Actor self, Actor crusher, HashSet<string> crushClasses);
+	}
+
+	public interface ILocomotor
+	{
+
 	}
 
 	public interface IFacingInfo : ITraitInfoInterface { int GetInitialFacing(); }

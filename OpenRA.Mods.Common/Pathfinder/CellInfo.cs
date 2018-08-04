@@ -15,7 +15,7 @@ namespace OpenRA.Mods.Common.Pathfinder
 	/// Describes the three states that a node in the graph can have.
 	/// Based on A* algorithm specification
 	/// </summary>
-	public enum CellStatus
+	public enum CellStatus : byte
 	{
 		Unvisited,
 		Open,
@@ -30,12 +30,12 @@ namespace OpenRA.Mods.Common.Pathfinder
 		/// <summary>
 		/// The cost to move from the start up to this node
 		/// </summary>
-		public readonly int CostSoFar;
+		public readonly short CostSoFar;
 
 		/// <summary>
 		/// The estimation of how far is the node from our goal
 		/// </summary>
-		public readonly int EstimatedTotal;
+		public readonly short EstimatedTotal;
 
 		/// <summary>
 		/// The previous node of this one that follows the shortest path
@@ -47,7 +47,7 @@ namespace OpenRA.Mods.Common.Pathfinder
 		/// </summary>
 		public readonly CellStatus Status;
 
-		public CellInfo(int costSoFar, int estimatedTotal, CPos previousPos, CellStatus status)
+		public CellInfo(short costSoFar, short estimatedTotal, CPos previousPos, CellStatus status)
 		{
 			CostSoFar = costSoFar;
 			PreviousPos = previousPos;

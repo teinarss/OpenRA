@@ -12,6 +12,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using OpenRA.Mods.Common.Pathfinder.PriorityQueue;
 using OpenRA.Mods.Common.Traits;
 using OpenRA.Primitives;
 using OpenRA.Traits;
@@ -27,7 +28,7 @@ namespace OpenRA.Mods.Common.Pathfinder
 		/// <summary>
 		/// Gets all the Connections for a given node in the graph
 		/// </summary>
-		List<GraphConnection> GetConnections(CPos position);
+		List<GraphConnection2> GetConnections(CPos position);
 
 		/// <summary>
 		/// Retrieves an object given a node in the graph
@@ -36,9 +37,9 @@ namespace OpenRA.Mods.Common.Pathfinder
 
 		Func<CPos, bool> CustomBlock { get; set; }
 
-		Func<CPos, int> CustomCost { get; set; }
+		Func<CPos, short> CustomCost { get; set; }
 
-		int LaneBias { get; set; }
+		short LaneBias { get; set; }
 
 		bool InReverse { get; set; }
 
@@ -49,28 +50,31 @@ namespace OpenRA.Mods.Common.Pathfinder
 		Actor Actor { get; }
 	}
 
-	public struct GraphConnection
+	public class GraphConnection : FastPriorityQueueNode
 	{
-		public static readonly CostComparer ConnectionCostComparer = CostComparer.Instance;
+		//public static readonly CostComparer ConnectionCostComparer = CostComparer.Instance;
 
-		public sealed class CostComparer : IComparer<GraphConnection>
-		{
-			public static readonly CostComparer Instance = new CostComparer();
-			CostComparer() { }
-			public int Compare(GraphConnection x, GraphConnection y)
-			{
-				return x.Cost.CompareTo(y.Cost);
-			}
-		}
+		//public sealed class CostComparer : IComparer<GraphConnection>
+		//{
+		//	public static readonly CostComparer Instance = new CostComparer();
+		//	CostComparer() { }
+		//	public int Compare(GraphConnection x, GraphConnection y)
+		//	{
+		//		return x.Cost.CompareTo(y.Cost);
+		//	}
+		//}
 
 		public readonly CPos Destination;
-		public readonly int Cost;
+		//public readonly int Cost;
 
 		public GraphConnection(CPos destination, int cost)
 		{
 			Destination = destination;
-			Cost = cost;
+			Priority = cost;
 		}
+
+		//public float Priority { get; set; }
+		//public int QueueIndex { get; set; }
 	}
 
 	sealed class PathGraph : IGraph<CellInfo>
@@ -78,11 +82,12 @@ namespace OpenRA.Mods.Common.Pathfinder
 		public Actor Actor { get; private set; }
 		public World World { get; private set; }
 		public Func<CPos, bool> CustomBlock { get; set; }
-		public Func<CPos, int> CustomCost { get; set; }
-		public int LaneBias { get; set; }
+		public Func<CPos, short> CustomCost { get; set; }
+		public short LaneBias { get; set; }
 		public bool InReverse { get; set; }
 		public Actor IgnoreActor { get; set; }
 
+		CellLayer<short> cellCost;
 		readonly CellConditions checkConditions;
 		readonly LocomotorInfo locomotorInfo;
 		readonly LocomotorInfo.WorldMovementInfo worldMovementInfo;
@@ -105,6 +110,9 @@ namespace OpenRA.Mods.Common.Pathfinder
 				customLayerInfo[cml.Index] = Pair.New(cml, pooledLayer.GetLayer());
 
 			World = world;
+			var cellMovementCostIndex = world.WorldActor.Trait<CellMovementCostIndex>();
+			cellCost = cellMovementCostIndex.Get(li.Name);
+
 			worldMovementInfo = locomotorInfo.GetWorldMovementInfo(world);
 			Actor = actor;
 			LaneBias = 1;
@@ -129,7 +137,7 @@ namespace OpenRA.Mods.Common.Pathfinder
 			new[] { new CVec(1, -1), new CVec(1, 0), new CVec(-1, 1), new CVec(0, 1), new CVec(1, 1) },
 		};
 
-		public List<GraphConnection> GetConnections(CPos position)
+		public List<GraphConnection2> GetConnections(CPos position)
 		{
 			var info = position.Layer == 0 ? groundInfo : customLayerInfo[position.Layer].Second;
 			var previousPos = info[position].PreviousPos;
@@ -139,13 +147,13 @@ namespace OpenRA.Mods.Common.Pathfinder
 			var index = dy * 3 + dx + 4;
 
 			var directions = DirectedNeighbors[index];
-			var validNeighbors = new List<GraphConnection>(directions.Length);
+			var validNeighbors = new List<GraphConnection2>(directions.Length);
 			for (var i = 0; i < directions.Length; i++)
 			{
 				var neighbor = position + directions[i];
 				var movementCost = GetCostToNode(neighbor, directions[i]);
 				if (movementCost != Constants.InvalidNode)
-					validNeighbors.Add(new GraphConnection(neighbor, movementCost));
+					validNeighbors.Add(new GraphConnection2(neighbor, movementCost));
 			}
 
 			if (position.Layer == 0)
@@ -155,7 +163,7 @@ namespace OpenRA.Mods.Common.Pathfinder
 					var layerPosition = new CPos(position.X, position.Y, cli.First.Index);
 					var entryCost = cli.First.EntryMovementCost(Actor.Info, locomotorInfo, layerPosition);
 					if (entryCost != Constants.InvalidNode)
-						validNeighbors.Add(new GraphConnection(layerPosition, entryCost));
+						validNeighbors.Add(new GraphConnection2(layerPosition, entryCost));
 				}
 			}
 			else
@@ -163,27 +171,31 @@ namespace OpenRA.Mods.Common.Pathfinder
 				var layerPosition = new CPos(position.X, position.Y, 0);
 				var exitCost = customLayerInfo[position.Layer].First.ExitMovementCost(Actor.Info, locomotorInfo, layerPosition);
 				if (exitCost != Constants.InvalidNode)
-					validNeighbors.Add(new GraphConnection(layerPosition, exitCost));
+					validNeighbors.Add(new GraphConnection2(layerPosition, exitCost));
 			}
 
 			return validNeighbors;
 		}
 
-		int GetCostToNode(CPos destNode, CVec direction)
+		short GetCostToNode(CPos destNode, CVec direction)
 		{
-			var movementCost = locomotorInfo.MovementCostToEnterCell(worldMovementInfo, Actor, destNode, IgnoreActor, checkConditions);
-			if (movementCost != int.MaxValue && !(CustomBlock != null && CustomBlock(destNode)))
+			var cost = short.MaxValue;
+			if (cellCost.Contains(destNode))
+				cost = cellCost[destNode];
+
+			var movementCost = locomotorInfo.MovementCostToEnterCell(cost, worldMovementInfo, Actor, destNode, IgnoreActor, checkConditions);
+			if (movementCost != short.MaxValue && !(CustomBlock != null && CustomBlock(destNode)))
 				return CalculateCellCost(destNode, direction, movementCost);
 
 			return Constants.InvalidNode;
 		}
 
-		int CalculateCellCost(CPos neighborCPos, CVec direction, int movementCost)
+		short CalculateCellCost(CPos neighborCPos, CVec direction, short movementCost)
 		{
 			var cellCost = movementCost;
 
 			if (direction.X * direction.Y != 0)
-				cellCost = (cellCost * 34) / 24;
+				cellCost = (short) ((cellCost * 34) / 24);
 
 			if (CustomCost != null)
 			{

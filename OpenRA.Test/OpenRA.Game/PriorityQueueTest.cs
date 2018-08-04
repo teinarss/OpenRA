@@ -10,7 +10,10 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
+using OpenRA.Mods.Common.Pathfinder.PriorityQueue;
 using OpenRA.Primitives;
 
 namespace OpenRA.Test
@@ -43,6 +46,54 @@ namespace OpenRA.Test
 			Assert.IsTrue(queue.Empty, "Queue should now be empty.");
 			Assert.Throws<InvalidOperationException>(() => queue.Peek(), "Peeking at an empty queue should throw.");
 			Assert.Throws<InvalidOperationException>(() => queue.Pop(), "Popping an empty queue should throw.");
+		}
+	}
+
+	[TestFixture]
+	class PriorityQueueTestStruct
+	{
+		[TestCase(TestName = "PriorityQueue maintains invariants when adding and removing items.")]
+		public void PriorityQueueGeneralTest()
+		{
+			var queue = new FastPriorityQueueStruct(5);
+
+			Assert.IsTrue(queue.Count == 0, "New queue should start out empty.");
+			//Assert.Throws<InvalidOperationException>(() => queue.Peek(), "Peeking at an empty queue should throw.");
+			//Assert.Throws<InvalidOperationException>(() => queue.Pop(), "Popping an empty queue should throw.");
+
+			var values = new List<GraphConnection2>
+			{
+				new GraphConnection2(new CPos(4, 0 ), 4),
+				new GraphConnection2(new CPos( 3, 0), 3),
+				new GraphConnection2(new CPos( 5, 0), 5),
+				new GraphConnection2(new CPos( 1, 0), 1),
+				new GraphConnection2(new CPos( 2, 0), 2)
+
+			};
+
+			foreach (var value in values)
+			{
+				queue.Enqueue(value);
+				//Assert.IsFalse(queue.Empty, "Queue should not be empty - items have been added.");
+			}
+
+
+			var sorted = values.OrderBy(v => v.Priority);
+
+
+			foreach (var value in sorted)
+			{
+				var dequeue = queue.Dequeue();
+
+				Assert.AreEqual(value.Priority, dequeue.Priority);
+				//Assert.AreEqual(value, queue.Peek(), "Peek returned the wrong item - should be in order.");
+				//Assert.IsFalse(queue.Empty, "Queue should not be empty yet.");
+				//Assert.AreEqual(value, queue.Pop(), "Pop returned the wrong item - should be in order.");
+			}
+
+			//Assert.IsTrue(queue.Empty, "Queue should now be empty.");
+			//Assert.Throws<InvalidOperationException>(() => queue.Peek(), "Peeking at an empty queue should throw.");
+			//Assert.Throws<InvalidOperationException>(() => queue.Pop(), "Popping an empty queue should throw.");
 		}
 	}
 }

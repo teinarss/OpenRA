@@ -139,7 +139,7 @@ namespace OpenRA.Mods.Common.Traits
 
 		public WVec CenterOffset(World w)
 		{
-			var off = (w.Map.CenterOfCell(new CPos(Dimensions.X, Dimensions.Y)) - w.Map.CenterOfCell(new CPos(1, 1))) / 2;
+			var off = (w.Map.CenterOfCell(new CPos((short) Dimensions.X, (short) Dimensions.Y)) - w.Map.CenterOfCell(new CPos(1, 1))) / 2;
 			return (off - new WVec(0, 0, off.Z)) + LocalCenterOffset;
 		}
 

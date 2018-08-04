@@ -814,7 +814,7 @@ namespace OpenRA
 		public CPos CellContaining(WPos pos)
 		{
 			if (Grid.Type == MapGridType.Rectangular)
-				return new CPos(pos.X / 1024, pos.Y / 1024);
+				return new CPos((short) (pos.X / 1024), (short) (pos.Y / 1024));
 
 			// Convert from world position to isometric cell position:
 			// (a) Subtract ([1/2 cell], [1/2 cell]) to move the rotation center to the middle of the corner cell
@@ -826,7 +826,7 @@ namespace OpenRA
 			// The world axes are rotated relative to the cell axes, so the standard cell size (1024) is increased by a factor of sqrt(2)
 			var u = (pos.Y + pos.X - 724) / 1448;
 			var v = (pos.Y - pos.X + (pos.Y > pos.X ? 724 : -724)) / 1448;
-			return new CPos(u, v);
+			return new CPos((short) u, (short) v);
 		}
 
 		public PPos ProjectedCellCovering(WPos pos)

@@ -127,17 +127,17 @@ namespace OpenRA.Mods.Common
 		static IEnumerable<CPos> Neighbours(CPos c, bool allowDiagonal)
 		{
 			yield return c;
-			yield return new CPos(c.X - 1, c.Y);
-			yield return new CPos(c.X + 1, c.Y);
-			yield return new CPos(c.X, c.Y - 1);
-			yield return new CPos(c.X, c.Y + 1);
+			yield return new CPos((short) (c.X - 1), c.Y);
+			yield return new CPos((short) (c.X + 1), c.Y);
+			yield return new CPos(c.X, (short) (c.Y - 1));
+			yield return new CPos(c.X, (short) (c.Y + 1));
 
 			if (allowDiagonal)
 			{
-				yield return new CPos(c.X - 1, c.Y - 1);
-				yield return new CPos(c.X + 1, c.Y - 1);
-				yield return new CPos(c.X - 1, c.Y + 1);
-				yield return new CPos(c.X + 1, c.Y + 1);
+				yield return new CPos((short) (c.X - 1), (short) (c.Y - 1));
+				yield return new CPos((short) (c.X + 1), (short) (c.Y - 1));
+				yield return new CPos((short) (c.X - 1), (short) (c.Y + 1));
+				yield return new CPos((short) (c.X + 1), (short) (c.Y + 1));
 			}
 		}
 
@@ -158,6 +158,26 @@ namespace OpenRA.Mods.Common
 			var a = (decimal)number;
 			foreach (var p in percentages)
 				a *= p / 100m;
+
+			return (int)a;
+		}
+
+		public static int ApplyPercentageModifiersUnsafe(int number, int[] percentages)
+		{
+			var a = (float)number;
+			var lenght = percentages.Length;
+
+			unsafe
+			{
+				fixed (int* p = percentages)
+				{
+					for (int i = 0; i < lenght; i++)
+					{
+						a *= *(p + i) / 100f;
+					}
+
+				}
+			}
 
 			return (int)a;
 		}

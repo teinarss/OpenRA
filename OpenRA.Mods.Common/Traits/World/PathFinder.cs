@@ -13,7 +13,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using OpenRA.Graphics;
 using OpenRA.Mods.Common.Pathfinder;
 using OpenRA.Traits;
 
@@ -41,14 +40,14 @@ namespace OpenRA.Mods.Common.Traits
 		/// <summary>
 		/// Calculates a path given a search specification
 		/// </summary>
-		List<CPos> FindPath(IPathSearch search);
+		List<CPos> FindPath(PathSearch search);
 
 		/// <summary>
 		/// Calculates a path given two search specifications, and
 		/// then returns a path when both search intersect each other
 		/// TODO: This should eventually disappear
 		/// </summary>
-		List<CPos> FindBidiPath(IPathSearch fromSrc, IPathSearch fromDest);
+		List<CPos> FindBidiPath(PathSearch fromSrc, PathSearch fromDest);
 	}
 
 	public class PathFinder : IPathFinder
@@ -110,7 +109,7 @@ namespace OpenRA.Mods.Common.Traits
 				return FindBidiPath(fromSrc, fromDest);
 		}
 
-		public List<CPos> FindPath(IPathSearch search)
+		public List<CPos> FindPath(PathSearch search)
 		{
 			List<CPos> path = null;
 
@@ -135,30 +134,37 @@ namespace OpenRA.Mods.Common.Traits
 
 		// Searches from both ends toward each other. This is used to prevent blockings in case we find
 		// units in the middle of the path that prevent us to continue.
-		public List<CPos> FindBidiPath(IPathSearch fromSrc, IPathSearch fromDest)
+		public List<CPos> FindBidiPath(PathSearch fromSrc, PathSearch fromDest)
 		{
 			List<CPos> path = null;
 
-			while (fromSrc.CanExpand && fromDest.CanExpand)
+			while (fromSrc.CanExpand || fromDest.CanExpand)
 			{
 				// make some progress on the first search
-				var p = fromSrc.Expand();
 
-				if (fromDest.Graph[p].Status == CellStatus.Closed &&
-					fromDest.Graph[p].CostSoFar < int.MaxValue)
+				if (fromSrc.CanExpand)
 				{
-					path = MakeBidiPath(fromSrc, fromDest, p);
-					break;
+					var p = fromSrc.Expand();
+
+					if (fromDest.Graph[p].Status == CellStatus.Closed &&
+						fromDest.Graph[p].CostSoFar < short.MaxValue)
+					{
+						path = MakeBidiPath(fromSrc, fromDest, p);
+						break;
+					}
 				}
 
-				// make some progress on the second search
-				var q = fromDest.Expand();
-
-				if (fromSrc.Graph[q].Status == CellStatus.Closed &&
-					fromSrc.Graph[q].CostSoFar < int.MaxValue)
+				if (fromDest.CanExpand)
 				{
-					path = MakeBidiPath(fromSrc, fromDest, q);
-					break;
+					// make some progress on the second search
+					var q = fromDest.Expand();
+
+					if (fromSrc.Graph[q].Status == CellStatus.Closed &&
+						fromSrc.Graph[q].CostSoFar < short.MaxValue)
+					{
+						path = MakeBidiPath(fromSrc, fromDest, q);
+						break;
+					}
 				}
 			}
 
@@ -189,7 +195,7 @@ namespace OpenRA.Mods.Common.Traits
 			return ret;
 		}
 
-		static List<CPos> MakeBidiPath(IPathSearch a, IPathSearch b, CPos confluenceNode)
+		static List<CPos> MakeBidiPath(PathSearch a, PathSearch b, CPos confluenceNode)
 		{
 			var ca = a.Graph;
 			var cb = b.Graph;

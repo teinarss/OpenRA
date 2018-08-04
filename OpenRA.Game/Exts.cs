@@ -347,6 +347,20 @@ namespace OpenRA
 			return ts.Concat(moreTs);
 		}
 
+		public static T[] AppendArray<T>(this T[] ts, params T[] moreTs)
+		{
+			T[] result = new T[ts.Length + moreTs.Length];
+			ts.CopyTo(result, 0);
+			var lenght = moreTs.Length;
+
+			for (int i = 0; i < lenght; i++)
+			{
+				result[ts.Length + i] = moreTs[i];
+			}
+			
+			return result;
+		}
+
 		public static HashSet<T> ToHashSet<T>(this IEnumerable<T> source)
 		{
 			return new HashSet<T>(source);
@@ -486,6 +500,11 @@ namespace OpenRA
 		public static int ParseIntegerInvariant(string s)
 		{
 			return int.Parse(s, NumberStyles.Integer, NumberFormatInfo.InvariantInfo);
+		}
+
+		public static short ParseShortInvariant(string s)
+		{
+			return short.Parse(s, NumberStyles.Integer, NumberFormatInfo.InvariantInfo);
 		}
 
 		public static bool TryParseIntegerInvariant(string s, out int i)

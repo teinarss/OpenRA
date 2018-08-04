@@ -74,7 +74,7 @@ namespace OpenRA.Mods.Common.Traits
 			// Create a new actor for this bridge and keep track of which subtiles this bridge includes
 			var bridge = w.CreateActor(bridgeTypes[tile].First, new TypeDictionary
 			{
-				new LocationInit(new CPos(ni, nj)),
+				new LocationInit(new CPos((short) ni, (short) nj)),
 				new OwnerInit(w.WorldActor.Owner),
 				new HealthInit(bridgeTypes[tile].Second, true),
 			}).Trait<Bridge>();
@@ -86,7 +86,7 @@ namespace OpenRA.Mods.Common.Traits
 			for (byte ind = 0; ind < template.Size.X * template.Size.Y; ind++)
 			{
 				// Where do we expect to find the subtile
-				var subtile = new CPos(ni + ind % template.Size.X, nj + ind / template.Size.X);
+				var subtile = new CPos((short) (ni + ind % template.Size.X), (short) (nj + ind / template.Size.X));
 
 				// This isn't the bridge you're looking for
 				if (!mapTiles.Contains(subtile) || mapTiles[subtile].Type != tile || mapTiles[subtile].Index != ind)

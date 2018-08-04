@@ -378,7 +378,7 @@ namespace OpenRA.Mods.Common.UtilityCommands
 
 		public virtual CPos ParseActorLocation(string input, int loc)
 		{
-			return new CPos(loc % MapSize, loc / MapSize);
+			return new CPos((short) (loc % MapSize), (short) (loc / MapSize));
 		}
 
 		public void LoadActors(IniFile file, string section, List<string> players, int mapSize, Map map)

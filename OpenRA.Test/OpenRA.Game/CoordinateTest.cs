@@ -23,9 +23,9 @@ namespace OpenRA.Test
 		{
 			foreach (var gridType in Enum.GetValues(typeof(MapGridType)).Cast<MapGridType>())
 			{
-				for (var x = 0; x < 12; x++)
+				for (short x = 0; x < 12; x++)
 				{
-					for (var y = 0; y < 12; y++)
+					for (short y = 0; y < 12; y++)
 					{
 						var cell = new CPos(x, y);
 						try

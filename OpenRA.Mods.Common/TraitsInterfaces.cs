@@ -76,12 +76,6 @@ namespace OpenRA.Mods.Common.Traits
 	}
 
 	[RequireExplicitImplementation]
-	public interface ICrushable
-	{
-		bool CrushableBy(Actor self, Actor crusher, HashSet<string> crushClasses);
-	}
-
-	[RequireExplicitImplementation]
 	public interface INotifyCrushed
 	{
 		void OnCrush(Actor self, Actor crusher, HashSet<string> crushClasses);
@@ -345,8 +339,8 @@ namespace OpenRA.Mods.Common.Traits
 		bool InteractsWithDefaultLayer { get; }
 
 		bool EnabledForActor(ActorInfo a, LocomotorInfo li);
-		int EntryMovementCost(ActorInfo a, LocomotorInfo li, CPos cell);
-		int ExitMovementCost(ActorInfo a, LocomotorInfo li, CPos cell);
+		short EntryMovementCost(ActorInfo a, LocomotorInfo li, CPos cell);
+		short ExitMovementCost(ActorInfo a, LocomotorInfo li, CPos cell);
 
 		byte GetTerrainIndex(CPos cell);
 		WPos CenterOfCell(CPos cell);

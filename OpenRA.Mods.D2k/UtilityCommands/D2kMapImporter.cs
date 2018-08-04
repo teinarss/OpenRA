@@ -372,10 +372,10 @@ namespace OpenRA.Mods.D2k.UtilityCommands
 		{
 			var tileIndex = (int)stream.Position / 4 - 2;
 
-			var x = (tileIndex % mapSize.Width) + MapCordonWidth;
+			var x = (short) ((tileIndex % mapSize.Width) + MapCordonWidth);
 			var y = (tileIndex / mapSize.Width) + MapCordonWidth;
 
-			return new CPos(x, y);
+			return new CPos(x, (short) y);
 		}
 
 		TerrainTile GetTile(int tileIndex)

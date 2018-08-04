@@ -186,11 +186,11 @@ namespace OpenRA.Mods.Common.Widgets
 				var previousCell = findEdge(queuedCell, new CVec(-1 * template.Size.X, 0));
 				var nextCell = findEdge(queuedCell, new CVec(1 * template.Size.X, 0));
 
-				for (var x = previousCell.X; x <= nextCell.X; x += template.Size.X)
+				for (var x =  previousCell.X; x <= nextCell.X; x += (short) template.Size.X)
 				{
 					PaintCell(new CPos(x, queuedCell.Y), isMoving);
-					var upperCell = new CPos(x, queuedCell.Y - (1 * template.Size.Y));
-					var lowerCell = new CPos(x, queuedCell.Y + (1 * template.Size.Y));
+					var upperCell = new CPos(x, (short) (queuedCell.Y - (1 * template.Size.Y)));
+					var lowerCell = new CPos(x, (short) (queuedCell.Y + (1 * template.Size.Y)));
 
 					if (shouldPaint(upperCell))
 						maybeEnqueue(upperCell);

@@ -16,7 +16,7 @@ using OpenRA.FileFormats;
 
 namespace OpenRA.Network
 {
-	sealed class ReplayRecorder
+	public sealed class ReplayRecorder
 	{
 		public ReplayMetadata Metadata;
 		BinaryWriter writer;

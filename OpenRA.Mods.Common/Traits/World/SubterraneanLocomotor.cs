@@ -18,7 +18,7 @@ namespace OpenRA.Mods.Common.Traits
 	public class SubterraneanLocomotorInfo : LocomotorInfo
 	{
 		[Desc("Pathfinding cost for submerging or reemerging.")]
-		public readonly int SubterraneanTransitionCost = 0;
+		public readonly short SubterraneanTransitionCost = 0;
 
 		[Desc("The terrain types that this actor can transition on. Leave empty to allow any.")]
 		public readonly HashSet<string> SubterraneanTransitionTerrainTypes = new HashSet<string>();

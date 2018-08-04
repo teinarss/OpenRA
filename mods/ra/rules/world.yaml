@@ -256,6 +256,7 @@ World:
 	SpawnMPUnits:
 		DropdownDisplayOrder: 1
 	PathFinder:
+	CellMovementCostIndex:
 	ValidateOrder:
 	DebugPauseState:
 	RadarPings:

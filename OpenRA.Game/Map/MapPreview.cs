@@ -372,7 +372,7 @@ namespace OpenRA
 
 					var spawns = new CPos[r.spawnpoints.Length / 2];
 					for (var j = 0; j < r.spawnpoints.Length; j += 2)
-						spawns[j / 2] = new CPos(r.spawnpoints[j], r.spawnpoints[j + 1]);
+						spawns[j / 2] = new CPos((short) r.spawnpoints[j], (short) r.spawnpoints[j + 1]);
 					newData.SpawnPoints = spawns;
 					newData.GridType = r.map_grid_type;
 					try

@@ -370,7 +370,7 @@ namespace OpenRA
 				if (value != null)
 				{
 					var parts = value.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
-					return new CPos(Exts.ParseIntegerInvariant(parts[0]), Exts.ParseIntegerInvariant(parts[1]));
+					return new CPos(Exts.ParseShortInvariant(parts[0]), Exts.ParseShortInvariant(parts[1]));
 				}
 
 				return InvalidValueAction(value, fieldType, fieldName);

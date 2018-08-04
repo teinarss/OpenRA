@@ -36,7 +36,7 @@ namespace OpenRA.Network
 		void Receive(Action<int, byte[]> packetFn);
 	}
 
-	class EchoConnection : IConnection
+	public class EchoConnection : IConnection
 	{
 		protected struct ReceivedPacket
 		{
