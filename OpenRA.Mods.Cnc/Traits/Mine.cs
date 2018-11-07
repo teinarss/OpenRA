@@ -9,58 +9,166 @@
  */
 #endregion
 
+using System.Linq;
+using OpenRA.Graphics;
+using OpenRA.Mods.Common;
 using OpenRA.Mods.Common.Traits;
 using OpenRA.Primitives;
 using OpenRA.Traits;
 
 namespace OpenRA.Mods.Cnc.Traits
 {
+
+	[Desc("This actor can collect crates.")]
+	public class MineDetonatorInfo : ITraitInfo
+	{
+		[Desc("Define collector type(s) checked by Crate and CrateAction for validity. Leave empty if actor is supposed to be able to collect any crate.")]
+		public readonly BitSet<MineDetonatorType> DetonatorTypes = default(BitSet<MineDetonatorType>);
+		public bool All { get { return DetonatorTypes == default(BitSet<MineDetonatorType>); } }
+
+		public object Create(ActorInitializer init) { return new MineDetonator(this); }
+	}
+	public class MineDetonator
+	{
+		public readonly MineDetonatorInfo Info;
+		public MineDetonator(MineDetonatorInfo info)
+		{
+			Info = info;
+		}
+	}
+
+	public class MineDetonatorType
+	{
+
+	}
+
 	class MineInfo : ITraitInfo
 	{
-		public readonly BitSet<CrushClass> CrushClasses = default(BitSet<CrushClass>);
+		//public readonly BitSet<CrushClass> CrushClasses = default(BitSet<CrushClass>);
 		public readonly bool AvoidFriendly = true;
 		public readonly bool BlockFriendly = true;
 		public readonly BitSet<CrushClass> DetonateClasses = default(BitSet<CrushClass>);
 
-		public object Create(ActorInitializer init) { return new Mine(this); }
+		[Desc("Define actors that can collect crates by setting one of these into the Collects field from the CrateCollector trait.")]
+		public readonly BitSet<MineDetonatorType> ValidCollectorTypes = new BitSet<MineDetonatorType>("crate-collector");
+
+		public object Create(ActorInitializer init) { return new Mine(init, this); }
 	}
 
-	class Mine : ICrushable, INotifyCrushed
+	class Mine : ITick, INotifyAddedToWorld, INotifyRemovedFromWorld
 	{
 		readonly MineInfo info;
+		bool detonated;
+		readonly Actor self;
 
-		public Mine(MineInfo info)
+		[Sync] int ticks;
+		[Sync] public CPos Location;
+
+		public Mine(ActorInitializer init, MineInfo info)
 		{
+			self = init.Self;
 			this.info = info;
 		}
 
-		void INotifyCrushed.WarnCrush(Actor self, Actor crusher, BitSet<CrushClass> crushClasses) { }
-
-		void INotifyCrushed.OnCrush(Actor self, Actor crusher, BitSet<CrushClass> crushClasses)
+		void CheckForCollectors(Actor self)
 		{
-			if (!info.CrushClasses.Overlaps(crushClasses))
+			// Check whether any other (ground) actors are in this cell.
+			var sameCellActors = self.World.ActorMap.GetActorsAt(self.Location).Where(a => a != self);
+
+			// HACK: Currently needed to find aircraft actors.
+			// TODO: Remove this once GetActorsAt supports aircraft.
+			sameCellActors.Concat(self.World.FindActorsInCircle(self.CenterPosition, new WDist(724))
+				.Where(a => a != self && a.Location == self.Location && !sameCellActors.Contains(a)));
+
+			if (!sameCellActors.Any())
 				return;
 
-			if (crusher.Info.HasTraitInfo<MineImmuneInfo>() || (self.Owner.Stances[crusher.Owner] == Stance.Ally && info.AvoidFriendly))
-				return;
+			var collector = sameCellActors.FirstOrDefault(a =>
+			{
+				if (!a.IsAtGroundLevel())
+					return false;
 
-			var mobile = crusher.TraitOrDefault<Mobile>();
-			if (mobile != null && !info.DetonateClasses.Overlaps(mobile.Info.LocomotorInfo.Crushes))
-				return;
+				var crateCollectorTraitInfo = a.Info.TraitInfoOrDefault<MineDetonatorInfo>();
+				if (crateCollectorTraitInfo == null)
+					return false;
 
-			self.Kill(crusher, mobile != null ? mobile.Info.LocomotorInfo.CrushDamageTypes : default(BitSet<DamageType>));
+				// Make sure that the actor can collect this crate type
+				return crateCollectorTraitInfo.All || crateCollectorTraitInfo.DetonatorTypes.Overlaps(info.ValidCollectorTypes);
+			});
+
+			if (collector != null)
+				OnCollectInner(collector, self);
 		}
 
-		bool ICrushable.CrushableBy(Actor self, Actor crusher, BitSet<CrushClass> crushClasses)
+		void OnCollectInner(Actor detonator, Actor mine)
 		{
-			if (info.BlockFriendly && !crusher.Info.HasTraitInfo<MineImmuneInfo>() && self.Owner.Stances[crusher.Owner] == Stance.Ally)
-				return false;
+			if (detonated)
+				return;
 
-			return info.CrushClasses.Overlaps(crushClasses);
+			if (detonator.Info.HasTraitInfo<MineImmuneInfo>() || (self.Owner.Stances[mine.Owner] == Stance.Ally && info.AvoidFriendly))
+				return;
+
+			self.Kill(detonator);
+
+			detonated = true;
+
+			mine.Dispose();
+		}
+
+		void ITick.Tick(Actor self)
+		{
+			CheckForCollectors(self);
+		}
+
+		public void AddedToWorld(Actor self)
+		{
+			var mineLocation = self.World.WorldActor.TraitOrDefault<MineLocations>();
+			if (mineLocation != null)
+				mineLocation.Add(self);
+		}
+
+		public void RemovedFromWorld(Actor self)
+		{
+			var mineLocation = self.World.WorldActor.TraitOrDefault<MineLocations>();
+			if (mineLocation != null)
+				mineLocation.Remove(self);
 		}
 	}
 
 	[Desc("Tag trait for stuff that should not trigger mines.")]
 	class MineImmuneInfo : TraitInfo<MineImmune> { }
 	class MineImmune { }
+
+	class MineLocationsInfo : ITraitInfo
+	{
+		public object Create(ActorInitializer init)
+		{
+			return new MineLocations();
+		}
+	}
+
+	class MineLocations : IWorldLoaded
+	{
+		CellLayer<bool> _locations;
+
+		public void Add(Actor self)
+		{
+			_locations[self.Location] = true;
+		}
+
+		public void Remove(Actor self)
+		{
+			_locations[self.Location] = false;
+		}
+
+		public void WorldLoaded(World w, WorldRenderer wr)
+		{
+			_locations = new CellLayer<bool>(w.Map);
+		}
+
+		public bool Occupied(CPos cPos)
+		{
+			return _locations[cPos];
+		}
+	}
 }

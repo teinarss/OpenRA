@@ -22,7 +22,7 @@
 			Beach: 80
 	Locomotor@WHEELED:
 		Name: wheeled
-		Crushes: mine, crate
+		Crushes: crate
 		TerrainSpeeds:
 			Clear: 80
 			Rough: 40
@@ -33,7 +33,7 @@
 			Beach: 40
 	Locomotor@HEAVYWHEELED:
 		Name: heavywheeled
-		Crushes: wall, mine, crate, infantry
+		Crushes: wall, crate, infantry
 		TerrainSpeeds:
 			Clear: 80
 			Rough: 40
@@ -44,7 +44,7 @@
 			Beach: 40
 	Locomotor@LIGHTTRACKED:
 		Name: lighttracked
-		Crushes: wall, mine, crate
+		Crushes: wall, crate
 		TerrainSpeeds:
 			Clear: 80
 			Rough: 70
@@ -55,7 +55,7 @@
 			Beach: 70
 	Locomotor@TRACKED:
 		Name: tracked
-		Crushes: wall, infantry, mine, crate
+		Crushes: wall, infantry, crate
 		TerrainSpeeds:
 			Clear: 80
 			Rough: 70
@@ -66,7 +66,7 @@
 			Beach: 70
 	Locomotor@HEAVYTRACKED:
 		Name: heavytracked
-		Crushes: wall, infantry, mine, crate, heavywall
+		Crushes: wall, infantry, crate, heavywall
 		TerrainSpeeds:
 			Clear: 80
 			Rough: 70
@@ -195,6 +195,7 @@ World:
 		WaterChance: 20
 		InitialSpawnDelay: 1500
 		CheckboxDisplayOrder: 1
+	MineLocations:
 	DomainIndex:
 	SmudgeLayer@SCORCH:
 		Type: Scorch

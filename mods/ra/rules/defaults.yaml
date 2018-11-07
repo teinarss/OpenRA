@@ -298,6 +298,7 @@
 	HitShape:
 	MapEditorData:
 		Categories: Vehicle
+	MineDetonator:
 
 ^TrackedVehicle:
 	Inherits: ^Vehicle
@@ -1083,7 +1084,6 @@
 	WithSpriteBody:
 	HiddenUnderFog:
 	Mine:
-		CrushClasses: mine
 		DetonateClasses: mine
 		AvoidFriendly: false
 		BlockFriendly: false
@@ -1103,7 +1103,7 @@
 	Targetable:
 		TargetTypes: Ground, Defense
 	Immobile:
-		OccupiesSpace: true
+		OccupiesSpace: false
 	HitShape:
 	MapEditorData:
 		Categories: System

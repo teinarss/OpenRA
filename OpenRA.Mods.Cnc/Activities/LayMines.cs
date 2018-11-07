@@ -28,6 +28,7 @@ namespace OpenRA.Mods.Cnc.Activities
 		readonly AmmoPool[] ammoPools;
 		readonly IMove movement;
 		readonly RearmableInfo rearmableInfo;
+		MineLocations mineLocations;
 
 		public LayMines(Actor self)
 		{
@@ -36,6 +37,8 @@ namespace OpenRA.Mods.Cnc.Activities
 			ammoPools = self.TraitsImplementing<AmmoPool>().ToArray();
 			movement = self.Trait<IMove>();
 			rearmableInfo = self.Info.TraitInfoOrDefault<RearmableInfo>();
+			mineLocations = self.World.WorldActor.TraitOrDefault<MineLocations>();
+
 		}
 
 		public override Activity Tick(Actor self)
@@ -83,10 +86,10 @@ namespace OpenRA.Mods.Cnc.Activities
 			return new Wait(20);	// nothing to do here
 		}
 
-		static bool ShouldLayMine(Actor self, CPos p)
+		bool ShouldLayMine(Actor self, CPos p)
 		{
 			// If there is no unit (other than me) here, we want to place a mine here
-			return self.World.ActorMap.GetActorsAt(p).All(a => a == self);
+			return self.World.ActorMap.GetActorsAt(p).All(a => a == self) && !mineLocations.Occupied(p);
 		}
 
 		void LayMine(Actor self)
