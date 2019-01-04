@@ -53,6 +53,9 @@ namespace OpenRA.Mods.Common.LoadScreens
 				Log.AddChannel("render", "render.csv");
 				Log.Write("render", "frame;time [ms]");
 
+				Log.AddChannel("pathfinding", "pathfinding.csv");
+				Log.Write("pathfinding", "tick;time [ms]");
+
 				Console.WriteLine("Saving benchmark data into {0}".F(Path.Combine(Platform.SupportDir, "Logs")));
 
 				Game.BenchmarkMode = true;

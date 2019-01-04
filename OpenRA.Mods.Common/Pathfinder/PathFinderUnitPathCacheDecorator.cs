@@ -44,6 +44,10 @@ namespace OpenRA.Mods.Common.Pathfinder
 
 				cacheStorage.Store(key, pb);
 
+				if (Game.BenchmarkMode)
+					Log.Write("pathfinding", "{0};{1}".F(Game.LocalTick, PerfHistory.Items["Pathfinder"].LastValue));
+				
+
 				return pb;
 			}
 		}
@@ -62,6 +66,9 @@ namespace OpenRA.Mods.Common.Pathfinder
 
 				cacheStorage.Store(key, pb);
 
+				if (Game.BenchmarkMode)
+					Log.Write("pathfinding", "{0};{1}".F(Game.LocalTick, PerfHistory.Items["Pathfinder"].LastValue));
+
 				return pb;
 			}
 		}
@@ -69,13 +76,29 @@ namespace OpenRA.Mods.Common.Pathfinder
 		public List<CPos> FindPath(IPathSearch search)
 		{
 			using (new PerfSample("Pathfinder"))
-				return pathFinder.FindPath(search);
+			{
+				var p = pathFinder.FindPath(search);
+
+				if (Game.BenchmarkMode)
+					Log.Write("pathfinding", "{0};{1}".F(Game.LocalTick, PerfHistory.Items["Pathfinder"].LastValue));
+
+				return p;
+			}
+				
 		}
 
 		public List<CPos> FindBidiPath(IPathSearch fromSrc, IPathSearch fromDest)
 		{
 			using (new PerfSample("Pathfinder"))
-				return pathFinder.FindBidiPath(fromSrc, fromDest);
+			{
+				var p = pathFinder.FindBidiPath(fromSrc, fromDest);
+
+				if (Game.BenchmarkMode)
+					Log.Write("pathfinding", "{0};{1}".F(Game.LocalTick, PerfHistory.Items["Pathfinder"].LastValue));
+
+				return p;
+			}
+				
 		}
 	}
 }
