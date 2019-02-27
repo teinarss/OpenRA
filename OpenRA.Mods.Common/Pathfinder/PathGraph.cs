@@ -84,19 +84,22 @@ namespace OpenRA.Mods.Common.Pathfinder
 
 		readonly CellConditions checkConditions;
 		readonly LocomotorInfo locomotorInfo;
-		readonly LocomotorInfo.WorldMovementInfo worldMovementInfo;
 		readonly CellInfoLayerPool.PooledCellInfoLayer pooledLayer;
 		readonly bool checkTerrainHeight;
 		CellLayer<CellInfo> groundInfo;
+		Locomotor locomotor;
 
 		readonly Dictionary<byte, Pair<ICustomMovementLayer, CellLayer<CellInfo>>> customLayerInfo =
 			new Dictionary<byte, Pair<ICustomMovementLayer, CellLayer<CellInfo>>>();
 
-		public PathGraph(CellInfoLayerPool layerPool, LocomotorInfo li, Actor actor, World world, bool checkForBlocked)
+		public PathGraph(CellInfoLayerPool layerPool, LocomotorInfo li, Locomotor locomotor, Actor actor, World world,
+			bool checkForBlocked)
 		{
 			pooledLayer = layerPool.Get();
 			groundInfo = pooledLayer.GetLayer();
 			locomotorInfo = li;
+			this.locomotor = locomotor;
+
 			var layers = world.GetCustomMovementLayers().Values
 				.Where(cml => cml.EnabledForActor(actor.Info, locomotorInfo));
 
@@ -104,7 +107,6 @@ namespace OpenRA.Mods.Common.Pathfinder
 				customLayerInfo[cml.Index] = Pair.New(cml, pooledLayer.GetLayer());
 
 			World = world;
-			worldMovementInfo = locomotorInfo.GetWorldMovementInfo(world);
 			Actor = actor;
 			LaneBias = 1;
 			checkConditions = checkForBlocked ? CellConditions.TransientActors : CellConditions.None;
@@ -170,7 +172,8 @@ namespace OpenRA.Mods.Common.Pathfinder
 
 		int GetCostToNode(CPos destNode, CVec direction)
 		{
-			var movementCost = locomotorInfo.MovementCostToEnterCell(worldMovementInfo, Actor, destNode, IgnoreActor, checkConditions);
+			var movementCost = locomotor.MovementCostToEnterCell(Actor, destNode, IgnoreActor, checkConditions, true);
+
 			if (movementCost != int.MaxValue && !(CustomBlock != null && CustomBlock(destNode)))
 				return CalculateCellCost(destNode, direction, movementCost);
 

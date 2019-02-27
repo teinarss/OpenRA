@@ -39,7 +39,12 @@ namespace OpenRA.Mods.Common.Activities
 		protected override void OnFirstRun(Actor self)
 		{
 			if (setIsMoving && mobile != null && !mobile.IsMoving)
+			{
+				
 				mobile.IsMoving = true;
+				self.World.ActorMap.SetIsMoving(self);
+			}
+				
 		}
 
 		public override Activity Tick(Actor self)
@@ -62,7 +67,11 @@ namespace OpenRA.Mods.Common.Activities
 		{
 			// If Mobile.IsMoving was set to 'true' earlier, we want to reset it to 'false' before the next tick.
 			if (mobile != null && mobile.IsMoving)
+			{
 				mobile.IsMoving = false;
+				self.World.ActorMap.SetIsMoving(self);
+			}
+				
 		}
 	}
 }

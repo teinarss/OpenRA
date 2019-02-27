@@ -47,11 +47,13 @@ namespace OpenRA.Mods.Common.Activities
 		{
 			mobile = self.Trait<Mobile>();
 
+			var locomotor = mobile.Locomotor;
+
 			getPath = () =>
 			{
 				List<CPos> path;
 				using (var search =
-					PathSearch.FromPoint(self.World, mobile.Info.LocomotorInfo, self, mobile.ToCell, destination, false)
+					PathSearch.FromPoint(self.World, mobile.Info.LocomotorInfo, locomotor, self, mobile.ToCell, destination, false)
 					.WithoutLaneBias())
 					path = self.World.WorldActor.Trait<IPathFinder>().FindPath(search);
 				return path;
@@ -60,9 +62,12 @@ namespace OpenRA.Mods.Common.Activities
 			nearEnough = WDist.Zero;
 		}
 
-		public Move(Actor self, CPos destination, WDist nearEnough, Actor ignoreActor = null, bool evaluateNearestMovableCell = false)
+		public Move(Actor self, CPos destination, WDist nearEnough, Actor ignoreActor = null,
+			bool evaluateNearestMovableCell = false)
 		{
 			mobile = self.Trait<Mobile>();
+
+			var locomotor = mobile.Locomotor;
 
 			getPath = () =>
 			{
@@ -70,7 +75,7 @@ namespace OpenRA.Mods.Common.Activities
 					return NoPath;
 
 				return self.World.WorldActor.Trait<IPathFinder>()
-					.FindUnitPath(mobile.ToCell, this.destination.Value, self, ignoreActor);
+					.FindUnitPath(mobile.ToCell, this.destination.Value, self, locomotor, ignoreActor);
 			};
 
 			// Note: Will be recalculated from OnFirstRun if evaluateNearestMovableCell is true
@@ -223,7 +228,7 @@ namespace OpenRA.Mods.Common.Activities
 				// IsMoving is then set back to false in Turn.OnLastRun.
 				// This is needed for actors that want to display their movement animation during turns (walker units, for example).
 				mobile.IsMoving = mobile.Info.AlwaysConsiderTurnAsMove;
-
+				self.World.ActorMap.SetIsMoving(self);
 				// HACK: To fix visual hiccups on actors with move animations during "L-turn to next part of movement" transitions
 				// or invisible mini-turns (due to less sprite facings than internal facings), we set IsMoving to  'true' during Turn activity
 				// when the facing delta is low enough to be covered with a single Turn tick.
@@ -351,6 +356,7 @@ namespace OpenRA.Mods.Common.Activities
 
 			protected readonly int MoveFractionTotal;
 			protected int moveFraction;
+			bool firstRun = true;
 
 			public MovePart(Move move, WPos from, WPos to, int fromFacing, int toFacing, int startingFraction)
 			{
@@ -388,6 +394,12 @@ namespace OpenRA.Mods.Common.Activities
 			{
 				var ret = InnerTick(self, Move.mobile);
 				Move.mobile.IsMoving = ret is MovePart;
+
+				if (firstRun)
+				{
+					self.World.ActorMap.SetIsMoving(self);
+					firstRun = false;
+				}
 
 				if (moveFraction > MoveFractionTotal)
 					moveFraction = MoveFractionTotal;

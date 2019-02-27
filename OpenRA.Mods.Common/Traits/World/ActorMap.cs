@@ -14,6 +14,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using OpenRA.Primitives;
 using OpenRA.Traits;
 
 namespace OpenRA.Mods.Common.Traits
@@ -170,6 +171,10 @@ namespace OpenRA.Mods.Common.Traits
 		readonly Dictionary<int, ProximityTrigger> proximityTriggers = new Dictionary<int, ProximityTrigger>();
 		int nextTriggerId;
 
+		public event Action<CPos> CellsUpdated = null;
+		public event Action<Actor> ActorAdded;
+		public event Action<Actor> ActorStartedMoving;
+
 		readonly CellLayer<InfluenceNode> influence;
 		readonly Dictionary<int, CellLayer<InfluenceNode>> customInfluence = new Dictionary<int, CellLayer<InfluenceNode>>();
 		public readonly Dictionary<int, ICustomMovementLayer> CustomMovementLayers = new Dictionary<int, ICustomMovementLayer>();
@@ -185,6 +190,12 @@ namespace OpenRA.Mods.Common.Traits
 
 		public WDist LargestActorRadius { get; private set; }
 		public WDist LargestBlockingActorRadius { get; private set; }
+
+		public void SetIsMoving(Actor self)
+		{
+			if (ActorStartedMoving != null)
+				ActorStartedMoving(self);
+		}
 
 		public ActorMap(World world, ActorMapInfo info)
 		{
@@ -359,17 +370,21 @@ namespace OpenRA.Mods.Common.Traits
 		{
 			foreach (var c in ios.OccupiedCells())
 			{
-				var uv = c.First.ToMPos(map);
+				var cell = c.First;
+				var uv = cell.ToMPos(map);
 				if (!influence.Contains(uv))
 					continue;
 
-				var layer = c.First.Layer == 0 ? influence : customInfluence[c.First.Layer];
+				var layer = cell.Layer == 0 ? influence : customInfluence[cell.Layer];
 				layer[uv] = new InfluenceNode { Next = layer[uv], SubCell = c.Second, Actor = self };
 
 				List<CellTrigger> triggers;
-				if (cellTriggerInfluence.TryGetValue(c.First, out triggers))
+				if (cellTriggerInfluence.TryGetValue(cell, out triggers))
 					foreach (var t in triggers)
 						t.Dirty = true;
+
+				if (CellsUpdated != null)
+					CellsUpdated(cell);
 			}
 		}
 
@@ -377,19 +392,23 @@ namespace OpenRA.Mods.Common.Traits
 		{
 			foreach (var c in ios.OccupiedCells())
 			{
-				var uv = c.First.ToMPos(map);
+				var cell = c.First;
+				var uv = cell.ToMPos(map);
 				if (!influence.Contains(uv))
 					continue;
 
-				var layer = c.First.Layer == 0 ? influence : customInfluence[c.First.Layer];
+				var layer = cell.Layer == 0 ? influence : customInfluence[cell.Layer];
 				var temp = layer[uv];
 				RemoveInfluenceInner(ref temp, self);
 				layer[uv] = temp;
 
 				List<CellTrigger> triggers;
-				if (cellTriggerInfluence.TryGetValue(c.First, out triggers))
+				if (cellTriggerInfluence.TryGetValue(cell, out triggers))
 					foreach (var t in triggers)
 						t.Dirty = true;
+
+				if (CellsUpdated != null)
+					CellsUpdated(cell);
 			}
 		}
 
@@ -516,6 +535,9 @@ namespace OpenRA.Mods.Common.Traits
 		public void AddPosition(Actor a, IOccupySpace ios)
 		{
 			UpdatePosition(a, ios);
+
+			if (ActorAdded != null)
+				ActorAdded(a);
 		}
 
 		public void RemovePosition(Actor a, IOccupySpace ios)

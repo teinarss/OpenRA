@@ -19,7 +19,7 @@ using OpenRA.Traits;
 namespace OpenRA.Mods.Common.Traits
 {
 	[Desc("Spawn base actor at the spawnpoint and support units in an annulus around the base actor. Both are defined at MPStartUnits. Attach this to the world actor.")]
-	public class SpawnMPUnitsInfo : ITraitInfo, Requires<MPStartLocationsInfo>, Requires<MPStartUnitsInfo>, ILobbyOptions
+	public class SpawnMPUnitsInfo : ITraitInfo, Requires<MPStartLocationsInfo>, Requires<MPStartUnitsInfo>, ILobbyOptions, Requires<LocomotorInfo>
 	{
 		public readonly string StartingUnitsClass = "none";
 
@@ -103,7 +103,8 @@ namespace OpenRA.Mods.Common.Traits
 			{
 				var actorRules = w.Map.Rules.Actors[s.ToLowerInvariant()];
 				var ip = actorRules.TraitInfo<IPositionableInfo>();
-				var validCells = supportSpawnCells.Where(c => ip.CanEnterCell(w, null, c));
+				var validCells = supportSpawnCells.Where(c => ip.CanEnterCell(w, null, c)).ToList();
+
 				if (!validCells.Any())
 				{
 					Log.Write("debug", "No cells available to spawn starting unit {0} for player {1}".F(s, p));
@@ -113,7 +114,7 @@ namespace OpenRA.Mods.Common.Traits
 				var cell = validCells.Random(w.SharedRandom);
 				var subCell = ip.SharesCell ? w.ActorMap.FreeSubCell(cell) : 0;
 
-				w.CreateActor(s.ToLowerInvariant(), new TypeDictionary
+				var a = w.CreateActor(s.ToLowerInvariant(), new TypeDictionary
 				{
 					new OwnerInit(p),
 					new LocationInit(cell),

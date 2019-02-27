@@ -55,7 +55,11 @@ namespace OpenRA.Mods.Common.Activities
 			}
 
 			if (movement != null)
+			{
 				movement.IsMoving = true;
+
+				self.World.ActorMap.SetIsMoving(self);
+			}
 
 			return this;
 		}
