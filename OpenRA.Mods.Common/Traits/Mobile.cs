@@ -619,7 +619,7 @@ namespace OpenRA.Mods.Common.Traits
 		}
 
 		public Activity ScriptedMove(CPos cell) { return new Move(self, cell); }
-		public Activity MoveTo(Func<List<CPos>> pathFunc) { return new Move(self, pathFunc); }
+		public Activity MoveTo(Func<Path> pathFunc) { return new Move(self, pathFunc); }
 
 		Activity VisualMove(Actor self, WPos fromPos, WPos toPos, CPos cell)
 		{
@@ -638,14 +638,14 @@ namespace OpenRA.Mods.Common.Traits
 				return above;
 
 			var pathFinder = self.World.WorldActor.Trait<IPathFinder>();
-			List<CPos> path;
+			Path path;
 			using (var search = PathSearch.Search(self.World, Info.LocomotorInfo, self, true,
 					loc => loc.Layer == 0 && CanEnterCell(loc))
 				.FromPoint(self.Location))
 				path = pathFinder.FindPath(search);
 
-			if (path.Count > 0)
-				return path[0];
+			if (path.PathNodes.Count > 0)
+				return path.PathNodes[0];
 
 			return null;
 		}

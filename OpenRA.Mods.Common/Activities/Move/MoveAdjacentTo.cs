@@ -21,8 +21,6 @@ namespace OpenRA.Mods.Common.Activities
 {
 	public class MoveAdjacentTo : Activity
 	{
-		static readonly List<CPos> NoPath = new List<CPos>();
-
 		protected readonly Mobile Mobile;
 		readonly IPathFinder pathFinder;
 		readonly DomainIndex domainIndex;
@@ -141,7 +139,7 @@ namespace OpenRA.Mods.Common.Activities
 			return this;
 		}
 
-		List<CPos> CalculatePathToTarget(Actor self)
+		Path CalculatePathToTarget(Actor self)
 		{
 			var targetCells = CandidateMovementCells(self);
 			var searchCells = new List<CPos>();
@@ -152,7 +150,7 @@ namespace OpenRA.Mods.Common.Activities
 					searchCells.Add(cell);
 
 			if (!searchCells.Any())
-				return NoPath;
+				return Path.Empty;
 
 			using (var fromSrc = PathSearch.FromPoints(self.World, Mobile.Info.LocomotorInfo, self, searchCells, loc, true))
 			using (var fromDest = PathSearch.FromPoint(self.World, Mobile.Info.LocomotorInfo, self, loc, lastVisibleTargetLocation, true).Reverse())

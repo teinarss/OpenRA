@@ -22,15 +22,15 @@ namespace OpenRA.Mods.Common.Pathfinder
 	public class PathFinderUnitPathCacheDecorator : IPathFinder
 	{
 		readonly IPathFinder pathFinder;
-		readonly ICacheStorage<List<CPos>> cacheStorage;
+		readonly ICacheStorage<Path> cacheStorage;
 
-		public PathFinderUnitPathCacheDecorator(IPathFinder pathFinder, ICacheStorage<List<CPos>> cacheStorage)
+		public PathFinderUnitPathCacheDecorator(IPathFinder pathFinder, ICacheStorage<Path> cacheStorage)
 		{
 			this.pathFinder = pathFinder;
 			this.cacheStorage = cacheStorage;
 		}
 
-		public List<CPos> FindUnitPath(CPos source, CPos target, Actor self, Actor ignoreActor)
+		public Path FindUnitPath(CPos source, CPos target, Actor self, Actor ignoreActor)
 		{
 			using (new PerfSample("Pathfinder"))
 			{
@@ -48,7 +48,7 @@ namespace OpenRA.Mods.Common.Pathfinder
 			}
 		}
 
-		public List<CPos> FindUnitPathToRange(CPos source, SubCell srcSub, WPos target, WDist range, Actor self)
+		public Path FindUnitPathToRange(CPos source, SubCell srcSub, WPos target, WDist range, Actor self)
 		{
 			using (new PerfSample("Pathfinder"))
 			{
@@ -66,13 +66,13 @@ namespace OpenRA.Mods.Common.Pathfinder
 			}
 		}
 
-		public List<CPos> FindPath(IPathSearch search)
+		public Path FindPath(IPathSearch search)
 		{
 			using (new PerfSample("Pathfinder"))
 				return pathFinder.FindPath(search);
 		}
 
-		public List<CPos> FindBidiPath(IPathSearch fromSrc, IPathSearch fromDest)
+		public Path FindBidiPath(IPathSearch fromSrc, IPathSearch fromDest)
 		{
 			using (new PerfSample("Pathfinder"))
 				return pathFinder.FindBidiPath(fromSrc, fromDest);

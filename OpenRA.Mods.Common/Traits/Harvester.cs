@@ -192,7 +192,7 @@ namespace OpenRA.Mods.Common.Traits
 				.ToDictionary(r => r.Location);
 
 			// Start a search from each refinery's delivery location:
-			List<CPos> path;
+			Path path;
 			var li = self.Info.TraitInfo<MobileInfo>().LocomotorInfo;
 			using (var search = PathSearch.FromPoints(self.World, li, self, refs.Values.Select(r => r.Location), self.Location, false)
 				.WithCustomCost(loc =>
@@ -211,8 +211,8 @@ namespace OpenRA.Mods.Common.Traits
 				}))
 				path = self.World.WorldActor.Trait<IPathFinder>().FindPath(search);
 
-			if (path.Count != 0)
-				return refs[path.Last()].Actor;
+			if (path.PathNodes.Count != 0)
+				return refs[path.PathNodes.Last()].Actor;
 
 			return null;
 		}

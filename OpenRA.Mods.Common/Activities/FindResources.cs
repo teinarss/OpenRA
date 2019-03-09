@@ -119,7 +119,7 @@ namespace OpenRA.Mods.Common.Activities
 			var searchRadiusSquared = searchRadius * searchRadius;
 
 			// Find any harvestable resources:
-			List<CPos> path;
+			Path path;
 			using (var search = PathSearch.Search(self.World, locomotorInfo, self, true, loc =>
 					domainIndex.IsPassable(self.Location, loc, locomotorInfo) && harv.CanHarvestCell(self, loc) && claimLayer.CanClaimCell(self, loc))
 				.WithCustomCost(loc =>
@@ -134,8 +134,8 @@ namespace OpenRA.Mods.Common.Activities
 				.FromPoint(searchFromLoc))
 				path = pathFinder.FindPath(search);
 
-			if (path.Count > 0)
-				return path[0];
+			if (path.PathNodes.Count > 0)
+				return path.PathNodes[0];
 
 			return null;
 		}

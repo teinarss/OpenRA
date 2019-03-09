@@ -14,11 +14,11 @@ using System.Linq;
 
 namespace OpenRA.Mods.Common.Pathfinder
 {
-	public class PathCacheStorage : ICacheStorage<List<CPos>>
+	public class PathCacheStorage : ICacheStorage<Path>
 	{
 		class CachedPath
 		{
-			public List<CPos> Result;
+			public Path Result;
 			public int Tick;
 		}
 
@@ -36,7 +36,7 @@ namespace OpenRA.Mods.Common.Pathfinder
 			cachedPaths.Remove(key);
 		}
 
-		public void Store(string key, List<CPos> data)
+		public void Store(string key, Path data)
 		{
 			// Eventually clean up the cachedPaths dictionary
 			if (cachedPaths.Count >= 100)
@@ -50,7 +50,7 @@ namespace OpenRA.Mods.Common.Pathfinder
 			});
 		}
 
-		public List<CPos> Retrieve(string key)
+		public Path Retrieve(string key)
 		{
 			CachedPath cached;
 			if (cachedPaths.TryGetValue(key, out cached))

@@ -23,11 +23,9 @@ namespace OpenRA.Mods.Common.Activities
 {
 	public class Move : Activity
 	{
-		static readonly List<CPos> NoPath = new List<CPos>();
-
 		readonly Mobile mobile;
 		readonly WDist nearEnough;
-		readonly Func<List<CPos>> getPath;
+		readonly Func<Path> getPath;
 		readonly Actor ignoreActor;
 
 		List<CPos> path;
@@ -49,7 +47,7 @@ namespace OpenRA.Mods.Common.Activities
 
 			getPath = () =>
 			{
-				List<CPos> path;
+				Path path;
 				using (var search =
 					PathSearch.FromPoint(self.World, mobile.Info.LocomotorInfo, self, mobile.ToCell, destination, false)
 					.WithoutLaneBias())
@@ -67,7 +65,7 @@ namespace OpenRA.Mods.Common.Activities
 			getPath = () =>
 			{
 				if (!this.destination.HasValue)
-					return NoPath;
+					return Path.Empty;
 
 				return self.World.WorldActor.Trait<IPathFinder>()
 					.FindUnitPath(mobile.ToCell, this.destination.Value, self, ignoreActor);
@@ -98,7 +96,7 @@ namespace OpenRA.Mods.Common.Activities
 			getPath = () =>
 			{
 				if (!target.IsValidFor(self))
-					return NoPath;
+					return Path.Empty;
 
 				return self.World.WorldActor.Trait<IPathFinder>().FindUnitPathToRange(
 					mobile.ToCell, mobile.ToSubCell, target.CenterPosition, range, self);
@@ -108,7 +106,7 @@ namespace OpenRA.Mods.Common.Activities
 			nearEnough = range;
 		}
 
-		public Move(Actor self, Func<List<CPos>> getPath)
+		public Move(Actor self, Func<Path> getPath)
 		{
 			mobile = self.Trait<Mobile>();
 
@@ -130,7 +128,7 @@ namespace OpenRA.Mods.Common.Activities
 
 		List<CPos> EvalPath()
 		{
-			var path = getPath().TakeWhile(a => a != mobile.ToCell).ToList();
+			var path = getPath().PathNodes.TakeWhile(a => a != mobile.ToCell).ToList();
 			mobile.PathHash = HashList(path);
 			return path;
 		}

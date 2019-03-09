@@ -152,10 +152,10 @@ namespace OpenRA.Mods.Common.Traits
 						.Sum(u => Math.Max(WDist.Zero.Length, Info.HarvesterEnemyAvoidanceRadius.Length - (world.Map.CenterOfCell(loc) - u.CenterPosition).Length)))
 					.FromPoint(actor.Location));
 
-			if (path.Count == 0)
+			if (path.PathNodes.Count == 0)
 				return Target.Invalid;
 
-			return Target.FromCell(world, path[0]);
+			return Target.FromCell(world, path.PathNodes[0]);
 		}
 	}
 }
