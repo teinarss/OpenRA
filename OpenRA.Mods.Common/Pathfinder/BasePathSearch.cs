@@ -20,7 +20,7 @@ namespace OpenRA.Mods.Common.Pathfinder
 		/// <summary>
 		/// The Graph used by the A*
 		/// </summary>
-		IGraph<CellInfo> Graph { get; }
+		IGraph<NodeInfo> Graph { get; }
 
 		/// <summary>
 		/// Stores the analyzed nodes by the expand function
@@ -60,7 +60,7 @@ namespace OpenRA.Mods.Common.Pathfinder
 
 	public abstract class BasePathSearch : IPathSearch
 	{
-		public IGraph<CellInfo> Graph { get; set; }
+		public IGraph<NodeInfo> Graph { get; set; }
 
 		protected IPriorityQueue<GraphConnection> OpenQueue { get; private set; }
 
@@ -79,7 +79,7 @@ namespace OpenRA.Mods.Common.Pathfinder
 		// a deterministic set of calculations
 		protected readonly IPriorityQueue<GraphConnection> StartPoints;
 
-		protected BasePathSearch(IGraph<CellInfo> graph)
+		protected BasePathSearch(IGraph<NodeInfo> graph)
 		{
 			Graph = graph;
 			OpenQueue = new PriorityQueue<GraphConnection>(GraphConnection.ConnectionCostComparer);

@@ -15,7 +15,7 @@ namespace OpenRA.Mods.Common.Pathfinder
 	/// Describes the three states that a node in the graph can have.
 	/// Based on A* algorithm specification
 	/// </summary>
-	public enum CellStatus
+	public enum NodeStatus : byte
 	{
 		Unvisited,
 		Open,
@@ -25,7 +25,7 @@ namespace OpenRA.Mods.Common.Pathfinder
 	/// <summary>
 	/// Stores information about nodes in the pathfinding graph
 	/// </summary>
-	public struct CellInfo
+	public struct NodeInfo
 	{
 		/// <summary>
 		/// The cost to move from the start up to this node
@@ -45,9 +45,9 @@ namespace OpenRA.Mods.Common.Pathfinder
 		/// <summary>
 		/// The status of this node
 		/// </summary>
-		public readonly CellStatus Status;
+		public readonly NodeStatus Status;
 
-		public CellInfo(int costSoFar, int estimatedTotal, CPos previousPos, CellStatus status)
+		public NodeInfo(int costSoFar, int estimatedTotal, CPos previousPos, NodeStatus status)
 		{
 			CostSoFar = costSoFar;
 			PreviousPos = previousPos;

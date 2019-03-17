@@ -39,7 +39,7 @@ namespace OpenRA.Mods.Common.Pathfinder
 
 		#region Constructors
 
-		private PathSearch(IGraph<CellInfo> graph)
+		private PathSearch(IGraph<NodeInfo> graph)
 			: base(graph)
 		{
 			considered = new LinkedList<Pair<CPos, int>>();
@@ -47,16 +47,48 @@ namespace OpenRA.Mods.Common.Pathfinder
 
 		public static IPathSearch Search(World world, LocomotorInfo li, Actor self, bool checkForBlocked, Func<CPos, bool> goalCondition)
 		{
-			var graph = new PathGraph(LayerPoolForWorld(world), li, self, world, checkForBlocked);
+
+
+			var baseCellCost = new BaseCellCost(world, self, li, LayerPoolForWorld(world));
+			var graph = new PathGraph(li, self, world, checkForBlocked, baseCellCost);
 			var search = new PathSearch(graph);
 			search.isGoal = goalCondition;
 			search.heuristic = loc => 0;
 			return search;
 		}
 
+		public static IGraph<NodeInfo> Get(World world, LocomotorInfo li, ClusterBoundaries boundaries)
+		{
+			var baseCellCost = new SimpleBaseCost(LayerPoolForWorld(world));
+			var graph = new HPathGraph(boundaries, baseCellCost, li, world);
+
+			return graph;
+		}
+
+		public static IPathSearch Get(World world, IGraph<NodeInfo> graph, CPos from, CPos target)
+		{
+
+			var search = new PathSearch(graph)
+			{
+				heuristic = DefaultEstimator(target)
+			};
+
+			search.isGoal = loc =>
+			{
+				var locInfo = search.Graph[loc];
+				return locInfo.EstimatedTotal - locInfo.CostSoFar == 0;
+			};
+
+			if (world.Map.Contains(from))
+				search.AddInitialCell(from);
+
+			return search;
+		}
+
 		public static IPathSearch FromPoint(World world, LocomotorInfo li, Actor self, CPos from, CPos target, bool checkForBlocked)
 		{
-			var graph = new PathGraph(LayerPoolForWorld(world), li, self, world, checkForBlocked);
+			var baseCellCost = new BaseCellCost(world, self, li, LayerPoolForWorld(world));
+			var graph = new PathGraph(li, self, world, checkForBlocked, baseCellCost);
 			var search = new PathSearch(graph)
 			{
 				heuristic = DefaultEstimator(target)
@@ -76,7 +108,8 @@ namespace OpenRA.Mods.Common.Pathfinder
 
 		public static IPathSearch FromPoints(World world, LocomotorInfo li, Actor self, IEnumerable<CPos> froms, CPos target, bool checkForBlocked)
 		{
-			var graph = new PathGraph(LayerPoolForWorld(world), li, self, world, checkForBlocked);
+			var baseCellCost = new BaseCellCost(world, self, li, LayerPoolForWorld(world));
+			var graph = new PathGraph(li, self, world, checkForBlocked, baseCellCost);
 			var search = new PathSearch(graph)
 			{
 				heuristic = DefaultEstimator(target)
@@ -97,7 +130,7 @@ namespace OpenRA.Mods.Common.Pathfinder
 		protected override void AddInitialCell(CPos location)
 		{
 			var cost = heuristic(location);
-			Graph[location] = new CellInfo(0, cost, location, CellStatus.Open);
+			Graph[location] = new NodeInfo(0, cost, location, NodeStatus.Open);
 			var connection = new GraphConnection(location, cost);
 			OpenQueue.Add(connection);
 			StartPoints.Add(connection);
@@ -116,7 +149,7 @@ namespace OpenRA.Mods.Common.Pathfinder
 			var currentMinNode = OpenQueue.Pop().Destination;
 
 			var currentCell = Graph[currentMinNode];
-			Graph[currentMinNode] = new CellInfo(currentCell.CostSoFar, currentCell.EstimatedTotal, currentCell.PreviousPos, CellStatus.Closed);
+			Graph[currentMinNode] = new NodeInfo(currentCell.CostSoFar, currentCell.EstimatedTotal, currentCell.PreviousPos, NodeStatus.Closed);
 
 			if (Graph.CustomCost != null && Graph.CustomCost(currentMinNode) == Constants.InvalidNode)
 				return currentMinNode;
@@ -130,22 +163,22 @@ namespace OpenRA.Mods.Common.Pathfinder
 				var neighborCell = Graph[neighborCPos];
 
 				// Cost is even higher; next direction:
-				if (neighborCell.Status == CellStatus.Closed || gCost >= neighborCell.CostSoFar)
+				if (neighborCell.Status == NodeStatus.Closed || gCost >= neighborCell.CostSoFar)
 					continue;
 
 				// Now we may seriously consider this direction using heuristics. If the cell has
 				// already been processed, we can reuse the result (just the difference between the
 				// estimated total and the cost so far
 				int hCost;
-				if (neighborCell.Status == CellStatus.Open)
+				if (neighborCell.Status == NodeStatus.Open)
 					hCost = neighborCell.EstimatedTotal - neighborCell.CostSoFar;
 				else
 					hCost = heuristic(neighborCPos);
 
 				var estimatedCost = gCost + hCost;
-				Graph[neighborCPos] = new CellInfo(gCost, estimatedCost, currentMinNode, CellStatus.Open);
+				Graph[neighborCPos] = new NodeInfo(gCost, estimatedCost, currentMinNode, NodeStatus.Open);
 
-				if (neighborCell.Status != CellStatus.Open)
+				if (neighborCell.Status != NodeStatus.Open)
 					OpenQueue.Add(new GraphConnection(neighborCPos, estimatedCost));
 
 				if (Debug)

@@ -255,6 +255,7 @@ namespace OpenRA.Traits
 		void RemovePosition(Actor a, IOccupySpace ios);
 		void UpdatePosition(Actor a, IOccupySpace ios);
 		IEnumerable<Actor> ActorsInBox(WPos a, WPos b);
+		event Action<Actor> ActorAdded;
 
 		WDist LargestActorRadius { get; }
 		WDist LargestBlockingActorRadius { get; }

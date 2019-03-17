@@ -109,17 +109,17 @@ namespace OpenRA.Mods.Common.Pathfinder
 			while (fromSrc.CanExpand && fromDest.CanExpand)
 			{
 				// make some progress on the first search
-				var p = fromSrc.Expand();
-				if (fromDest.Graph[p].Status == CellStatus.Closed &&
-				    fromDest.Graph[p].CostSoFar < int.MaxValue)
+				var frontier = fromSrc.Expand();
+				if (fromDest.Graph[frontier].Status == NodeStatus.Closed &&
+				    fromDest.Graph[frontier].CostSoFar < int.MaxValue)
 				{
-					path = MakeBidiPath(fromSrc, fromDest, p);
+					path = MakeBidiPath(fromSrc, fromDest, frontier);
 					break;
 				}
 
 				// make some progress on the second search
 				var q = fromDest.Expand();
-				if (fromSrc.Graph[q].Status == CellStatus.Closed &&
+				if (fromSrc.Graph[q].Status == NodeStatus.Closed &&
 				    fromSrc.Graph[q].CostSoFar < int.MaxValue)
 				{
 					path = MakeBidiPath(fromSrc, fromDest, q);
@@ -138,7 +138,7 @@ namespace OpenRA.Mods.Common.Pathfinder
 
 		// Build the path from the destination. When we find a node that has the same previous
 		// position than itself, that node is the source node.
-		static Path MakePath(IGraph<CellInfo> cellInfo, CPos destination)
+		static Path MakePath(IGraph<NodeInfo> cellInfo, CPos destination)
 		{
 			var ret = new List<CPos>();
 			var currentNode = destination;
@@ -162,7 +162,15 @@ namespace OpenRA.Mods.Common.Pathfinder
 
 			halfPath1.PathNodes.Reverse();
 
-			halfPath1.PathNodes.AddRange(halfPath2.PathNodes);
+			var p = halfPath2.PathNodes;
+			if (p.Count > 0)
+			{
+				for (int i = 1; i < p.Count; i++)
+				{
+					halfPath1.PathNodes.Add(p[i]);
+				}
+
+			}
 
 			//var ca = a.Graph;
 			//var cb = b.Graph;

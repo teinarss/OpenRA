@@ -118,7 +118,11 @@
     <Compile Include="ActorExts.cs" />
     <Compile Include="AIUtils.cs" />
     <Compile Include="Pathfinder\Cluster.cs" />
+    <Compile Include="Pathfinder\Dijkstra.cs" />
+    <Compile Include="Pathfinder\Edge.cs" />
+    <Compile Include="Pathfinder\EdgeType.cs" />
     <Compile Include="Pathfinder\IPathFinder.cs" />
+    <Compile Include="Pathfinder\Node.cs" />
     <Compile Include="Pathfinder\Path.cs" />
     <Compile Include="Pathfinder\PathFinder.cs" />
     <Compile Include="TargetExtensions.cs" />
@@ -220,7 +224,7 @@
     <Compile Include="Orders\PlaceBuildingOrderGenerator.cs" />
     <Compile Include="Orders\AircraftMoveOrderTargeter.cs" />
     <Compile Include="Orders\UnitOrderTargeter.cs" />
-    <Compile Include="Pathfinder\CellInfo.cs" />
+    <Compile Include="Pathfinder\NodeInfo.cs" />
     <Compile Include="PlayerExtensions.cs" />
     <Compile Include="Scripting\Properties\AircraftProperties.cs" />
     <Compile Include="Scripting\Properties\CaptureProperties.cs" />
@@ -574,6 +578,7 @@
     <Compile Include="Traits\World\PaletteFromGimpOrJascFile.cs" />
     <Compile Include="Traits\World\PaletteFromPng.cs" />
     <Compile Include="Traits\World\PaletteFromRGBA.cs" />
+    <Compile Include="Traits\World\ClusterOverlay .cs" />
     <Compile Include="Traits\World\TerrainRenderer.cs" />
     <Compile Include="Traits\World\ValidateOrder.cs" />
     <Compile Include="Pathfinder\CellInfoLayerPool.cs" />

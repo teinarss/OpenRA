@@ -18,14 +18,14 @@ namespace OpenRA.Mods.Common.Pathfinder
 	sealed class CellInfoLayerPool
 	{
 		const int MaxPoolSize = 4;
-		readonly Stack<CellLayer<CellInfo>> pool = new Stack<CellLayer<CellInfo>>(MaxPoolSize);
-		readonly CellLayer<CellInfo> defaultLayer;
+		readonly Stack<CellLayer<NodeInfo>> pool = new Stack<CellLayer<NodeInfo>>(MaxPoolSize);
+		readonly CellLayer<NodeInfo> defaultLayer;
 
 		public CellInfoLayerPool(Map map)
 		{
 			defaultLayer =
-				CellLayer<CellInfo>.CreateInstance(
-					mpos => new CellInfo(int.MaxValue, int.MaxValue, mpos.ToCPos(map), CellStatus.Unvisited),
+				CellLayer<NodeInfo>.CreateInstance(
+					mpos => new NodeInfo(int.MaxValue, int.MaxValue, mpos.ToCPos(map), NodeStatus.Unvisited),
 					new Size(map.MapSize.X, map.MapSize.Y),
 					map.Grid.Type);
 		}
@@ -35,20 +35,20 @@ namespace OpenRA.Mods.Common.Pathfinder
 			return new PooledCellInfoLayer(this);
 		}
 
-		CellLayer<CellInfo> GetLayer()
+		CellLayer<NodeInfo> GetLayer()
 		{
-			CellLayer<CellInfo> layer = null;
+			CellLayer<NodeInfo> layer = null;
 			lock (pool)
 				if (pool.Count > 0)
 					layer = pool.Pop();
 
 			if (layer == null)
-				layer = new CellLayer<CellInfo>(defaultLayer.GridType, defaultLayer.Size);
+				layer = new CellLayer<NodeInfo>(defaultLayer.GridType, defaultLayer.Size);
 			layer.CopyValuesFrom(defaultLayer);
 			return layer;
 		}
 
-		void ReturnLayer(CellLayer<CellInfo> layer)
+		void ReturnLayer(CellLayer<NodeInfo> layer)
 		{
 			lock (pool)
 			   if (pool.Count < MaxPoolSize)
@@ -58,14 +58,14 @@ namespace OpenRA.Mods.Common.Pathfinder
 		public class PooledCellInfoLayer : IDisposable
 		{
 			CellInfoLayerPool layerPool;
-			List<CellLayer<CellInfo>> layers = new List<CellLayer<CellInfo>>();
+			List<CellLayer<NodeInfo>> layers = new List<CellLayer<NodeInfo>>();
 
 			public PooledCellInfoLayer(CellInfoLayerPool layerPool)
 			{
 				this.layerPool = layerPool;
 			}
 
-			public CellLayer<CellInfo> GetLayer()
+			public CellLayer<NodeInfo> GetLayer()
 			{
 				var layer = layerPool.GetLayer();
 				layers.Add(layer);

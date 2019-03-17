@@ -183,6 +183,8 @@ namespace OpenRA.Mods.Common.Traits
 		readonly HashSet<Actor> removeActorPosition = new HashSet<Actor>();
 		readonly Predicate<Actor> actorShouldBeRemoved;
 
+		public event Action<Actor> ActorAdded;
+
 		public WDist LargestActorRadius { get; private set; }
 		public WDist LargestBlockingActorRadius { get; private set; }
 
@@ -516,6 +518,9 @@ namespace OpenRA.Mods.Common.Traits
 		public void AddPosition(Actor a, IOccupySpace ios)
 		{
 			UpdatePosition(a, ios);
+
+			if (ActorAdded != null)
+				ActorAdded(a);
 		}
 
 		public void RemovePosition(Actor a, IOccupySpace ios)

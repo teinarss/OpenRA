@@ -190,6 +190,15 @@ namespace OpenRA.Mods.Common.Traits
 			return new WorldMovementInfo(world, this);
 		}
 
+		public bool CanEnterCell(World world, Actor self, CPos cell, Actor ignoreActor = null)
+		{
+			if (MovementCostForCell(world, cell) == int.MaxValue)
+				return false;
+
+			var check =  CellConditions.All;
+			return CanMoveFreelyInto(world, self, cell, ignoreActor, check);
+		}
+
 		public int MovementCostToEnterCell(WorldMovementInfo worldMovementInfo, Actor self, CPos cell, Actor ignoreActor = null, CellConditions check = CellConditions.All)
 		{
 			var cost = MovementCostForCell(worldMovementInfo.World, worldMovementInfo.TerrainInfos, cell);
