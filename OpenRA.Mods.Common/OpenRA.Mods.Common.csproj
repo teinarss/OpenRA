@@ -633,6 +633,7 @@
     <Compile Include="Warheads\ChangeOwnerWarhead.cs" />
     <Compile Include="UtilityCommands\PngSheetExportMetadataCommand.cs" />
     <Compile Include="UtilityCommands\PngSheetImportMetadataCommand.cs" />
+    <Compile Include="Widgets\GradientColorBlockWidget.cs" />
     <Compile Include="Widgets\Logic\Editor\ActorEditLogic.cs" />
     <Compile Include="Widgets\ExponentialSliderWidget.cs" />
     <Compile Include="Widgets\Logic\Ingame\GameSaveLoadingLogic.cs" />
