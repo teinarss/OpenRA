@@ -1031,6 +1031,9 @@ scrollitem-hover: dialog.png
 	corner-bl: 512,127,1,1
 	corner-br: 639,127,1,1
 
+scrollitem-allblack-hover: dialog.png
+	background: 511,452,60,60
+
 # A copy of dialog2 (normal button)
 scrollheader-selected: dialog.png
 	background: 513,1,126,126

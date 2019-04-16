@@ -250,6 +250,10 @@ scrollitem-selected: chrome.png
 	corner-bl: 64,254,2,2
 	corner-br: 126,254,2,2
 
+# A copy of button-hover
+scrollitem-allblack-hover: chrome.png
+	background: 192,0,60,60
+
 slider: chrome.png
 	tick: 64,64,1,4
 

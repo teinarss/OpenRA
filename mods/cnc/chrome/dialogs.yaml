@@ -151,6 +151,34 @@ ScrollPanel@SPECTATOR_DROPDOWN_TEMPLATE:
 					Height: 25
 					Shadow: True
 
+ScrollPanel@SPECTATOR_LABEL_DROPDOWN_TEMPLATE:
+	Width: DROPDOWN_WIDTH
+	Background: panel-black
+	Children:
+		ScrollItem@HEADER:
+			Width: PARENT_RIGHT - 27
+			Height: 13
+			X: 2
+			Y: 0
+			Visible: false
+			Children:
+				Label@LABEL:
+					Font: TinyBold
+					Width: PARENT_RIGHT
+					Height: 10
+					Align: Center
+		ScrollItem@TEMPLATE:
+			Width: PARENT_RIGHT - 27
+			Height: 25
+			X: 2
+			Y: 0
+			Visible: false
+			Children:
+				Label@LABEL:
+					X: 10
+					Width: PARENT_RIGHT - 20
+					Height: 25
+
 Background@THREEBUTTON_PROMPT:
 	X: (WINDOW_RIGHT - WIDTH) / 2
 	Y: (WINDOW_BOTTOM - 90) / 2

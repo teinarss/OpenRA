@@ -933,6 +933,9 @@ mainmenu-border: dialog.png
 dropdown: dialog.png
 	separator: 512,1,1,19
 
+scrollitem-allblack-hover: dialog.png
+	background: 578,387,60,60
+	
 logos: loadscreen.png
 	logo: 0,0,256,256
 
