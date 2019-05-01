@@ -38,6 +38,7 @@ namespace OpenRA.Graphics
 			this.builder = builder;
 
 			font = Game.Renderer.CreateFont(data);
+			var height = font.GetHeight(size, deviceScale);
 
 			glyphs = new Cache<Pair<char, Color>, GlyphInfo>(CreateGlyph, Pair<char, Color>.EqualityComparer);
 
@@ -49,8 +50,8 @@ namespace OpenRA.Graphics
 				PrecacheColor(Color.White, name);
 
 			// Measure M
-			var mGlyphInfo = glyphs[Pair.New('M', Color.White)];
-			var height = mGlyphInfo.Sprite.Bounds.Height;
+			//var mGlyphInfo = glyphs[Pair.New('M', Color.White)];
+			//var height = mGlyphInfo.Sprite.Bounds.Height;
 
 			TopOffset = size - height;
 		}

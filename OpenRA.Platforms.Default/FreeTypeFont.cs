@@ -27,6 +27,14 @@ namespace OpenRA.Platforms.Default
 		internal const int FT_LOAD_RENDER = 0x04;
 
 		internal static readonly int FaceRecGlyphOffset = IntPtr.Size == 8 ? 152 : 84; // offsetof(FT_FaceRec, glyph)
+		internal static readonly int FaceRecSizeOffset = IntPtr.Size == 8 ? 152 : 88; // offsetof(FT_FaceRec, glyph)
+		internal static readonly int SizeRecMetricsOffset = IntPtr.Size == 8 ? 152 : 12; // offsetof(FT_FaceRec, glyph)
+		internal static readonly int SizeMetricsAscenderOffset = IntPtr.Size == 8 ? 152 : 12; // offsetof(FT_FaceRec, glyph)
+		internal static readonly int SizeMetricsDescenderOffset = IntPtr.Size == 8 ? 152 : 16; // offsetof(FT_FaceRec, glyph)
+
+
+
+		internal static readonly int FaceRecAscenderOffset = IntPtr.Size == 8 ? 138 : 70; // offsetof(FT_FaceRec, glyph)
 		internal static readonly int GlyphSlotMetricsOffset = IntPtr.Size == 8 ? 48 : 24; // offsetof(FT_GlyphSlotRec, metrics)
 		internal static readonly int GlyphSlotBitmapOffset = IntPtr.Size == 8 ? 152 : 76; // offsetof(FT_GlyphSlotRec, bitmap)
 		internal static readonly int GlyphSlotBitmapLeftOffset = IntPtr.Size == 8 ? 192 : 100; // offsetof(FT_GlyphSlotRec, bitmap_left)
@@ -78,6 +86,30 @@ namespace OpenRA.Platforms.Default
 				throw new InvalidDataException("Failed to initialize font");
 		}
 
+		public int GetHeight(int size, float deviceScale)
+		{
+			var scaledSize = (uint)(size * deviceScale);
+			if (FreeType.FT_Set_Pixel_Sizes(face, scaledSize, scaledSize) != FreeType.OK)
+				return 0;
+
+			if (FreeType.FT_Load_Char(face, 'M', FreeType.FT_LOAD_RENDER) != FreeType.OK)
+				return 0;
+
+			// Extract the glyph data we care about
+			// HACK: This uses raw pointer offsets to avoid defining structs and types that are 95% unnecessary
+
+			var faceSize = Marshal.ReadIntPtr(IntPtr.Add(face, FreeType.FaceRecSizeOffset)); // face->size
+			var metrics = IntPtr.Add(faceSize, FreeType.SizeRecMetricsOffset); // face->size->metrics
+			var ascender = Marshal.ReadIntPtr(IntPtr.Add(metrics, FreeType.SizeMetricsAscenderOffset)); // face->size->metrics.ascender
+			var descender = Marshal.ReadIntPtr(IntPtr.Add(metrics, FreeType.SizeMetricsDescenderOffset)); // face->size->metrics.descender
+
+			var ascenderValue = (int) ascender >> 6;
+			var descenderValue = (int) descender >> 6;
+
+			// descender is negative
+			return ascenderValue + descenderValue;
+		}
+
 		public FontGlyph CreateGlyph(char c, int size, float deviceScale)
 		{
 			var scaledSize = (uint)(size * deviceScale);
@@ -90,6 +122,13 @@ namespace OpenRA.Platforms.Default
 			// Extract the glyph data we care about
 			// HACK: This uses raw pointer offsets to avoid defining structs and types that are 95% unnecessary
 			var glyph = Marshal.ReadIntPtr(IntPtr.Add(face, FreeType.FaceRecGlyphOffset)); // face->glyph
+			var sizePtr = Marshal.ReadIntPtr(IntPtr.Add(face, FreeType.FaceRecSizeOffset)); // face->size
+			var metrics1 = IntPtr.Add(sizePtr, FreeType.SizeRecMetricsOffset); // face->size->metrics
+			var ascender = Marshal.ReadIntPtr(IntPtr.Add(metrics1, FreeType.SizeMetricsAscenderOffset)); // face->size->metrics.ascender
+			var descender = Marshal.ReadIntPtr(IntPtr.Add(metrics1, FreeType.SizeMetricsDescenderOffset)); // face->size->metrics.descender
+			
+
+			//var ascender = Marshal.ReadInt16(IntPtr.Add(face, FreeType.FaceRecAscenderOffset));
 
 			var metrics = IntPtr.Add(glyph, FreeType.GlyphSlotMetricsOffset); // face->glyph->metrics
 			var metricsWidth = Marshal.ReadIntPtr(IntPtr.Add(metrics, FreeType.MetricsWidthOffset)); // face->glyph->metrics.width
@@ -106,6 +145,10 @@ namespace OpenRA.Platforms.Default
 			// Convert FreeType's 26.6 fixed point format to integers by discarding fractional bits
 			var glyphSize = new Size((int)metricsWidth >> 6, (int)metricsHeight >> 6);
 			var glyphAdvance = (int)metricsAdvance >> 6;
+
+			//var oeuoe =(int) ascender /32;
+			var oeuoe1 =(int) ascender >> 6;
+			var eoueou = (int) descender >> 6;
 
 			var g = new FontGlyph
 			{
