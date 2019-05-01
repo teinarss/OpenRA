@@ -19,6 +19,7 @@ namespace OpenRA.Graphics
 {
 	public sealed class SpriteFont : IDisposable
 	{
+		public int TopOffset { get; private set; }
 		readonly int size;
 		readonly SheetBuilder builder;
 		readonly Func<string, float> lineWidth;
@@ -46,6 +47,12 @@ namespace OpenRA.Graphics
 
 			if (size <= 24)
 				PrecacheColor(Color.White, name);
+
+			// Measure M
+			var mGlyphInfo = glyphs[Pair.New('M', Color.White)];
+			var height = mGlyphInfo.Sprite.Bounds.Height;
+
+			TopOffset = size - height;
 		}
 
 		public void SetScale(float scale)
