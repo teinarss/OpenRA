@@ -274,6 +274,135 @@ Container@OBSERVER_WIDGETS:
 			Width: 765
 			Height: 240
 			Children:
+				ColorBlock@OEOEOEOEERRR:
+					X: 1000
+					Y: 100
+					Width: 600
+					Height: 24
+					Color: 00000090
+				Label@OEOEEO:
+					X: 1000
+					Y: 100
+					Width: 120
+					Height: 24
+					Text: Mesacer_(euoeueo)
+					Shadow: True
+					VAlign: Top
+				Label@OEOEEOeueo:
+					X: 1150
+					Y: 100
+					Width: 120
+					Height: 24
+					Text: Mesacer_(euoeueo)
+					Shadow: True
+					VAlign: Middle
+				Label@OEOEEOeueopp:
+					X: 1300
+					Y: 100
+					Width: 120
+					Height: 24
+					Text: Mesacer_(euoeueo)
+					Shadow: True
+					VAlign: Bottom
+				ColorBlock@OEOEOEOEERRR:
+					X: 1000
+					Y: 150
+					Width: 600
+					Height: 24
+					Color: 00000090
+				Label@OEOEEO:
+					X: 1000
+					Y: 150
+					Width: 120
+					Height: 24
+					Font: Bold
+					Text: Mesacer_(euoeueo)
+					Shadow: True
+					VAlign: Top
+				Label@OEOEEOeueo:
+					X: 1150
+					Y: 150
+					Width: 120
+					Height: 24
+					Font: Bold
+					Text: Mesacer_(euoeueo)
+					Shadow: True
+					VAlign: Middle
+				Label@OEOEEOeueopp:
+					X: 1300
+					Y: 150
+					Width: 120
+					Height: 24
+					Font: Bold
+					Text: Mesacer_(euoeueo)
+					Shadow: True
+					VAlign: Bottom
+				ColorBlock@OEOEOEOEERRR:
+					X: 1000
+					Y: 200
+					Width: 600
+					Height: 30
+					Color: 00000090
+				Label@OEOEEO:
+					X: 1000
+					Y: 200
+					Width: 120
+					Height: 30
+					Font: MediumBold
+					Text: Mesacer_(euoeueo)
+					Shadow: True
+					VAlign: Top
+				Label@OEOEEOeueo:
+					X: 1200
+					Y: 200
+					Width: 120
+					Height: 30
+					Font: MediumBold
+					Text: Mesacer_(euoeueo)
+					Shadow: True
+					VAlign: Middle
+				Label@OEOEEOeueopp:
+					X: 1400
+					Y: 200
+					Width: 120
+					Height: 30
+					Font: MediumBold
+					Text: Mesacer_(euoeueo)
+					Shadow: True
+					VAlign: Bottom
+				ColorBlock@OEOEOEOEERRR:
+					X: 1000
+					Y: 250
+					Width: 800
+					Height: 35
+					Color: 00000090
+				Label@OEOEEO:
+					X: 1000
+					Y: 250
+					Width: 120
+					Height: 35
+					Font: BigBold
+					Text: Mesacer_(euoeueo)
+					Shadow: True
+					VAlign: Top
+				Label@OEOEEOeueo:
+					X: 1250
+					Y: 250
+					Width: 120
+					Height: 35
+					Font: BigBold
+					Text: Mesacer_(euoeueo)
+					Shadow: True
+					VAlign: Middle
+				Label@OEOEEOeueopp:
+					X: 1500
+					Y: 250
+					Width: 120
+					Height: 35
+					Font: BigBold
+					Text: Mesacer_(euoeueo)
+					Shadow: True
+					VAlign: Bottom
 				DropDownButton@STATS_DROPDOWN:
 					X: 0
 					Y: 0
