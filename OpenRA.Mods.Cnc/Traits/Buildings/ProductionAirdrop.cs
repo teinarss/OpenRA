@@ -9,6 +9,7 @@
  */
 #endregion
 
+using System;
 using System.Linq;
 using OpenRA.Activities;
 using OpenRA.Mods.Common;
@@ -72,6 +73,7 @@ namespace OpenRA.Mods.Cnc.Traits
 					new FacingInit(64)
 				});
 
+				actor.QueueActivity(new RetardationFly(actor, Target.FromCell(w, self.Location + new CVec(20, 0)), 100));
 				actor.QueueActivity(new Fly(actor, Target.FromPos(self.CenterPosition + new WVec(landDistance, 0, 0))));
 				actor.QueueActivity(new Land(actor, Target.FromActor(self)));
 				actor.QueueActivity(new CallFunc(() =>
@@ -91,6 +93,43 @@ namespace OpenRA.Mods.Cnc.Traits
 			});
 
 			return true;
+		}
+	}
+
+	public class RetardationFly : Activity
+	{
+		readonly Actor self;
+		readonly Target target;
+		Aircraft aircraft;
+		double acc;
+		int speed = 0;
+		int tick = 0;
+		int totalTicks;
+
+		public RetardationFly(Actor self, Target target, int ticks)
+		{
+			totalTicks = ticks;
+			this.self = self;
+			this.target = target;
+			aircraft = self.Trait<Aircraft>();
+
+			var delta = self.CenterPosition - target.CenterPosition;
+
+			acc = ((delta.HorizontalLength - aircraft.MovementSpeed * ticks) * 2) / Math.Pow(ticks, 2);
+
+			speed = (int)(acc * ticks) + aircraft.MovementSpeed;
+		}
+
+		public override Activity Tick(Actor self)
+		{
+			var move = aircraft.FlyStep((int)(speed - acc * tick++), aircraft.Facing);
+
+			if (totalTicks == tick)
+				return NextActivity;
+
+			aircraft.SetPosition(self, aircraft.CenterPosition + move);
+
+			return this;
 		}
 	}
 }
