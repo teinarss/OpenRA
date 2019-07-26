@@ -32,8 +32,6 @@ namespace OpenRA.Mods.Common.Pathfinder
 			Boundaries = boundaries;
 		}
 
-		public Boundaries Bounds { get; set; }
-
 		public bool Contains(CPos cell)
 		{
 			return true;
@@ -45,13 +43,17 @@ namespace OpenRA.Mods.Common.Pathfinder
 		}
 	}
 
-	class Edge
+	public class Edge
 	{
 		public Edge(CPos to, EdgeType edgeType, int cost)
 		{
+			To = to;
+			EdgeType = edgeType;
+			Cost = cost;
 		}
 
 		public EdgeType EdgeType { get; set; }
+		public int Cost { get; private set; }
 		public List<CPos> Path { get; private set; }
 		public CPos To { get; set; }
 	}
@@ -64,7 +66,13 @@ namespace OpenRA.Mods.Common.Pathfinder
 
 	public class ClustersManager
 	{
+		public HGraph Graph { get; private set; }
 		public List<Cluster> Clusters;
+
+		public ClustersManager(HGraph graph)
+		{
+			Graph = graph;
+		}
 
 		public void Add(List<Cluster> buildCluster)
 		{
@@ -74,13 +82,14 @@ namespace OpenRA.Mods.Common.Pathfinder
 
 	public class ClusterBuilder
 	{
+		const int Maxentrancewidth = 6;
+		const int ClusterSize = 10;
+
 		readonly Map map;
 		readonly World world;
 		readonly Locomotor locomotor;
 		readonly int maxLevel;
-		const int Maxentrancewidth = 6;
 
-		const int ClusterSize = 10;
 		public List<Cluster>[] Clusters;
 
 		HGraph graph = new HGraph();
@@ -97,7 +106,7 @@ namespace OpenRA.Mods.Common.Pathfinder
 
 		public ClustersManager Build()
 		{
-			var clusters = new ClustersManager();
+			var clusters = new ClustersManager(graph);
 			var clusterSize = ClusterSize;
 			for (int level = 0; level < maxLevel; level++)
 			{
@@ -143,17 +152,9 @@ namespace OpenRA.Mods.Common.Pathfinder
 					}
 					else
 					{
-
 						foreach (var cluster1 in Clusters[level - 1])
 						{
-							if (cluster.Contains(cluster1))
-							{
-								cluster.AddCluster(cluster1);
-							}
-
 						}
-
-						CreateAbstractBorderNodes(cluster, clusterAbove, clusterOnLeft);
 					}
 
 					clusters.Add(cluster);
@@ -165,88 +166,9 @@ namespace OpenRA.Mods.Common.Pathfinder
 
 			foreach (var cluster in clusters)
 			{
-				cluster.CreateIntraClusterEdges(level == 0);
 			}
 
 			return clusters;
-		}
-
-		void CreateAbstractBorderNodes(Cluster cluster, Cluster clusterAbove, Cluster clusterOnLeft)
-		{
-			foreach (var c1 in cluster.Clusters)
-			{
-				if (clusterOnLeft != null)
-				{
-					foreach (var c2 in clusterOnLeft.Clusters)
-					{
-						if (c1.TopLeft.Y == c2.TopLeft.Y && c2.BottomRight.X + 1 == c1.TopLeft.X)
-						{
-							CreateAbstractInterEdges(cluster, clusterOnLeft, c1, c2);
-						}
-					}
-				}
-
-				if (clusterAbove != null)
-				{
-					foreach (var c2 in clusterAbove.Clusters)
-					{
-						if (c1.TopLeft.X == c2.TopLeft.X && c2.BottomRight.Y + 1 == c1.TopLeft.Y)
-						{
-							CreateAbstractInterEdges(cluster, clusterAbove, c1, c2);
-						}
-					}
-				}
-
-			}
-			//var top = cluster.TopLeft.Y;
-			//var left = cluster.TopLeft.X;
-
-			//if (clusterAbove != null)
-			//{
-			//	CreateEntrancesOnTop(
-			//							left,
-			//							left + cluster.Width - 1,
-			//							top - 1,
-			//							clusterAbove,
-			//							cluster
-			//							 );
-			//}
-
-			//if (clusterOnLeft != null)
-			//{
-			//	CreateEntrancesOnLeft(
-			//		top,
-			//		top + cluster.Height - 1,
-			//		left - 1,
-			//		clusterOnLeft,
-			//		cluster);
-			//}
-		}
-
-		void CreateAbstractInterEdges(Cluster cluster, Cluster clusterOnLeft, Cluster c1, Cluster c2)
-		{
-			foreach (var node in c1.Nodes)
-			{
-				foreach (var edge in node.Edges)
-				{
-					if (edge.EdgeType == EdgeType.Inter && c2.Contains(edge.To))
-					{
-						var node1 = cluster.AddNode(edge.From.CPos);
-
-						//var node2 = new Node(currentCluster.Id, destNode);
-						var node2 = clusterOnLeft.AddNode(edge.To.CPos);
-
-
-						var edge1 = new Edge(node1, node2, EdgeType.Inter, 1);
-						node1.AddEdge(edge1);
-
-						var edge2 = new Edge(node2, node1, EdgeType.Inter, 1);
-						node2.AddEdge(edge2);
-
-						break;
-					}
-				}
-			}
 		}
 
 		public Cluster GetCluster(int x, int y)
@@ -266,14 +188,14 @@ namespace OpenRA.Mods.Common.Pathfinder
 
 		void CreateClusterEntrances(Cluster cluster, Cluster clusterAbove, Cluster clusterOnLeft)
 		{
-			var top = cluster.Bounds.Top;
-			var left = cluster.Bounds.Left;
+			var top = cluster.Boundaries.Top;
+			var left = cluster.Boundaries.Left;
 
 			if (clusterAbove != null)
 			{
 				CreateEntrancesOnTop(
 										left,
-										cluster.Bounds.Right,
+										cluster.Boundaries.Right,
 										top,
 										clusterAbove,
 										cluster);
@@ -283,7 +205,7 @@ namespace OpenRA.Mods.Common.Pathfinder
 			{
 				CreateEntrancesOnLeft(
 					top,
-					cluster.Bounds.Bottom,
+					cluster.Boundaries.Bottom,
 					left,
 					clusterOnLeft,
 					cluster);
@@ -381,210 +303,20 @@ namespace OpenRA.Mods.Common.Pathfinder
 		{
 			return new CPos(left, top);
 		}
-
-		public void UpdateEntrance(Cluster cluster1, Cluster cluster2)
-		{
-			// cluster to the left
-			if (cluster1.Bounds.X > cluster2.Bounds.X || cluster1.Bounds.X < cluster2.Bounds.X)
-			{
-				var clusterLeft = cluster1.Bounds.X > cluster2.Bounds.X ? cluster2 : cluster1;
-				var cluster = cluster1.Bounds.X > cluster2.Bounds.X ? cluster1 : cluster2;
-
-				var top = cluster.Bounds.Y;
-				var left = cluster.Bounds.X;
-
-				var nodesIoDelete1 = new List<Node>();
-				var nodesIoDelete2 = new List<Node>();
-
-
-				foreach (var node1 in cluster.Nodes)
-				{
-					var found = false;
-					foreach (var edge in node1.Edges.Where(e => e.To.ClusterId == clusterLeft.Id))
-					{
-
-						//cluster2.RemoveNode(edge.To);
-						nodesIoDelete2.Add(edge.To);
-						found = true;
-					}
-
-					if (found)
-						nodesIoDelete1.Add(node1);
-				}
-
-				foreach (var node in nodesIoDelete1)
-				{
-					cluster.RemoveNode(node);
-				}
-
-				foreach (var node in nodesIoDelete2)
-				{
-					clusterLeft.RemoveNode(node);
-				}
-
-				CreateEntrancesOnLeft(
-				top,
-				cluster.BottomRight.Y,
-				left,
-				clusterLeft,
-				cluster);
-			}
-
-			// cluster to the top
-			if (cluster1.Bounds.Y > cluster2.Bounds.Y || cluster1.Bounds.Y < cluster2.Bounds.Y)
-			{
-				var clusterOnTop = cluster1.Bounds.Y > cluster2.Bounds.Y ? cluster2 : cluster1;
-				var cluster = cluster1.Bounds.Y > cluster2.Bounds.Y ? cluster1 : cluster2;
-
-				var top = cluster.Bounds.Y;
-				var left = cluster.Bounds.X;
-
-				var nodesIoDelete1 = new List<Node>();
-				var nodesIoDelete2 = new List<Node>();
-
-
-				foreach (var node1 in cluster.Nodes)
-				{
-					var found = false;
-					foreach (var edge in node1.Edges.Where(e => e.To.ClusterId == clusterOnTop.Id))
-					{
-
-						//cluster2.RemoveNode(edge.To);
-						nodesIoDelete2.Add(edge.To);
-						found = true;
-					}
-
-					if (found)
-						nodesIoDelete1.Add(node1);
-				}
-
-				foreach (var node in nodesIoDelete1)
-				{
-					cluster.RemoveNode(node);
-				}
-
-				foreach (var node in nodesIoDelete2)
-				{
-					clusterOnTop.RemoveNode(node);
-				}
-
-				CreateEntrancesOnTop(
-						left,
-						cluster.BottomRight.X,
-						top,
-						clusterOnTop,
-						cluster
-						 );
-
-
-			}
-		}
-
-		public void Update(Pair<CPos, SubCell>[] occupiedCells)
-		{
-			var updateCluster = new UpdateClusterEdges();
-
-			var clusters = Clusters[0];
-
-			foreach (var occupiedCell in occupiedCells)
-			{
-				var cell = occupiedCell.First;
-				var i = cell.X / 10;
-				var j = cell.Y / 10;
-
-				var cluster = GetCluster(clusters, ClusterSize, i, j);
-
-				updateCluster.UpdatedClusters.Add(cluster);
-
-				// left edge and not on the border
-				if (cell.X == cluster.Bounds.X && cluster.Bounds.X != 0)
-				{
-					var otherCluster = GetCluster(clusters, ClusterSize, i - 1, j);
-
-					updateCluster.AddClusters(cluster, otherCluster);
-				}
-
-				// top edge
-				if (cell.Y == cluster.TopLeft.Y && cluster.TopLeft.Y != 0)
-				{
-					var otherCluster = GetCluster(clusters, ClusterSize, i, j - 1);
-
-					updateCluster.AddClusters(cluster, otherCluster);
-				}
-
-				// right edge
-				if (cell.X == cluster.BottomRight.X && cluster.BottomRight.X != map.MapSize.X)
-				{
-					var otherCluster = GetCluster(clusters, ClusterSize, i + 1, j);
-
-					updateCluster.AddClusters(cluster, otherCluster);
-				}
-
-				// bottom edge
-				if (cell.Y == cluster.BottomRight.Y && cluster.BottomRight.Y != map.MapSize.Y)
-				{
-					var otherCluster = GetCluster(clusters, ClusterSize, i, j + 1);
-
-					updateCluster.AddClusters(cluster, otherCluster);
-				}
-
-
-				// Todo: could be multiple nodes on this cell...
-				//var node = cluster.Nodes.SingleOrDefault(n => n.CPos == cell);
-
-				//if (node != null)
-				//{
-				//	foreach (var edge in node.Edges.Where(e => e.EdgeType == EdgeType.Inter))
-				//	{
-				//		var i1 = edge.To.CPos.X / 10;
-				//		var j1 = edge.To.CPos.Y / 10;
-
-				//		var cluster2 = GetCluster(clusters, 0, i1, j1);
-
-				//		updateCluster.AddClusters(cluster, cluster2);
-				//	}
-				//}
-				//else
-				//{
-
-				//}
-
-
-
-
-
-				//if (!updateCluster.UpdatedClusters.ContainsKey(cluster))
-				//{
-				//	var hashSet = new HashSet<Node> { node };
-
-				//	updateCluster.Add(cluster, hashSet);
-				//}
-				//else
-				//{
-				//	updateCluster[cluster].Add(node);
-				//}
-			}
-
-			foreach (var clusterPair in updateCluster.Pairs)
-			{
-				UpdateEntrance(clusterPair.First, clusterPair.Second);
-			}
-
-			foreach (var cluster in updateCluster.UpdatedClusters)
-			{
-				cluster.RemoveIntraEdges();
-				cluster.CreateIntraClusterEdges(true);
-			}
-		}
 	}
 
-	class HGraph
+	public class HGraph
 	{
-		Dictionary<CPos, Edge> edges = new Dictionary<CPos, Edge>();
+		Dictionary<CPos, LinkedList<Edge>> edges = new Dictionary<CPos, LinkedList<Edge>>();
 
 		public void AddEdge(CPos cell, CPos to, EdgeType edgeType, int cost = 1)
 		{
-			edges.Add(cell, new Edge(to, edgeType, cost));
+			edges.GetOrAdd(cell).AddLast(new Edge(to, edgeType, cost));
+		}
+
+		public IEnumerable<Edge> Edges(CPos cell)
+		{
+			return edges[cell];
 		}
 	}
 }

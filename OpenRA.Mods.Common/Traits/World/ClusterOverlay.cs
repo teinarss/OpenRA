@@ -55,7 +55,7 @@ namespace OpenRA.Mods.Common.Traits
 						break;
 					case "1":
 						Enabled = true;
-						level = Int32.Parse(arg);
+						level = int.Parse(arg);
 						break;
 
 					default:
@@ -72,7 +72,7 @@ namespace OpenRA.Mods.Common.Traits
 				return;
 			var map = wr.World.Map;
 			var wcr = Game.Renderer.WorldRgbaColorRenderer;
-			var locomotor = self.TraitsImplementing<Locomotor>().SingleOrDefault(l => l.Info.Name == "WHEELED");
+			var locomotor = self.TraitsImplementing<Locomotor>().SingleOrDefault(l => l.Info.Name == "wheeled");
 			var topLeftCorner = map.Grid.CellCorners[0][0];
 			var topRightCorner = map.Grid.CellCorners[0][1];
 			var bottomRightCorner = map.Grid.CellCorners[0][2];
@@ -85,110 +85,44 @@ namespace OpenRA.Mods.Common.Traits
 
 			var edgeDrawn = new HashSet<Tuple<CPos, CPos>>();
 
-			foreach (var cluster in locomotor.ClustersManager.Clusters)
+			var locomotorClustersManager = locomotor.ClustersManager;
+			foreach (var cluster in locomotorClustersManager.Clusters)
 			{
-				var boundaries = cluster.Bounds;
+				var boundaries = cluster.Boundaries;
 				var tl = GetSceenPos(wr, boundaries.Left, boundaries.Top, map, topLeftCorner);
 				var tr = GetSceenPos(wr, boundaries.Right, boundaries.Top, map, topRightCorner);
 				var br = GetSceenPos(wr, boundaries.Right, boundaries.Bottom, map, bottomRightCorner);
 				var bl = GetSceenPos(wr, boundaries.Left, boundaries.Bottom, map, bottomLeftCorner);
 
-				//var screen = cellCorner.Select(c => wr.Screen3DPxPosition(pos + c)).ToArray();
-				  //cluster.X.
-				  //
 				wcr.DrawLine(tl, tr, width, color, color);
-				wcr.DrawLine(tr,br, width, color, color);
+				wcr.DrawLine(tr, br, width, color, color);
 				wcr.DrawLine(br, bl, width, color, color);
 				wcr.DrawLine(bl, tl, width, color, color);
 
 				foreach (var node in cluster.Nodes)
 				{
-					var pos = map.CenterOfCell(node.CPos);
+					var pos = map.CenterOfCell(node);
 					var wpos = wr.Screen3DPxPosition(pos);
 
 					DrawNode(wr, Color.Orange, wpos);
 
-					foreach (var edge in node.Edges)
+					var edges = locomotorClustersManager.Graph.Edges(node);
+
+					foreach (var edge in edges)
 					{
-						var tuple1 = Tuple.Create(edge.From.CPos, edge.To.CPos);
-						var tuple2 = Tuple.Create(edge.To.CPos, edge.From.CPos);
+						var tuple1 = Tuple.Create(node, edge.To);
+						var tuple2 = Tuple.Create(edge.To, node);
 
 						if (edgeDrawn.Contains(tuple1))
 							continue;
 
-						RenderEdge(wr, map, edge);
-						//foreach (var cPose in edge.Path)
-						//{
-							
-						//}
-
-						//var e1p = map.CenterOfCell(edge.From.CPos);
-						//var e1wp = wr.Screen3DPxPosition(e1p);
-
-						//var e2p = map.CenterOfCell(edge.To.CPos);
-						//var e2wp = wr.Screen3DPxPosition(e2p);
-
-						//wcr.DrawLine(e1wp, e2wp, width, edgeColor, edgeColor);
+						RenderEdge(wr, map, edge, node);
 
 						edgeDrawn.Add(tuple1);
 						edgeDrawn.Add(tuple2);
-
 					}
 				}
-
-
 			}
-
-
-
-			//var tileSet = wr.World.Map.Rules.TileSet;
-
-			//var colors = tileSet.HeightDebugColors;
-			//var mouseCell = wr.Viewport.ViewToWorld(Viewport.LastMousePos).ToMPos(wr.World.Map);
-
-			//foreach (var uv in wr.Viewport.AllVisibleCells.CandidateMapCoords)
-			//{
-			//	if (!map.Height.Contains(uv))
-			//		continue;
-
-			//	var height = (int)map.Height[uv];
-			//	var tile = map.Tiles[uv];
-			//	var ti = tileSet.GetTileInfo(tile);
-			//	var ramp = ti != null ? ti.RampType : 0;
-
-			//	var corners = map.Grid.CellCorners[ramp];
-			//	var color = corners.Select(c => colors[height + c.Z / 512]).ToArray();
-			//	var cPos = uv.ToCPos(map);
-
-
-			//	var pos = map.CenterOfCell(cPos);
-
-
-
-
-			//	var screen = corners.Select(c => wr.Screen3DPxPosition(pos + c)).ToArray();
-			//	//var width = (uv == mouseCell ? 3 : 1) / wr.Viewport.Zoom;
-
-			//	// Colors change between points, so render separately
-			//	for (var i = 0; i < 4; i++)
-			//	{
-			//		var j = (i + 1) % 4;
-			//		wcr.DrawLine(screen[i], screen[j], width, color[i], color[j]);
-			//	}
-			//}
-
-			// Projected cell coordinates for the current cell
-			//var projectedCorners = map.Grid.CellCorners[0];
-			//foreach (var puv in map.ProjectedCellsCovering(mouseCell))
-			//{
-			//	var pos = map.CenterOfCell(((MPos)puv).ToCPos(map));
-			//	var screen = projectedCorners.Select(c => wr.Screen3DPxPosition(pos + c - new WVec(0, 0, pos.Z))).ToArray();
-			//	for (var i = 0; i < 4; i++)
-			//	{
-			//		var j = (i + 1) % 4;
-			//		wcr.DrawLine(screen[i], screen[j], 3 / wr.Viewport.Zoom, Color.Navy);
-			//	}
-			//}
 		}
 
 		public static void DrawNode(WorldRenderer wr, Color color, float3 location)
@@ -200,12 +134,12 @@ namespace OpenRA.Mods.Common.Traits
 			Game.Renderer.WorldRgbaColorRenderer.FillRect(tl, br, color);
 		}
 
-		public void RenderEdge(WorldRenderer wr, Map map, Edge edge)
+		public void RenderEdge(WorldRenderer wr, Map map, Edge edge, CPos node)
 		{
 			var iz = 1 / wr.Viewport.Zoom;
 
-			var first = GetScreenPos(wr, edge.From.CPos, map);
-			var last = GetScreenPos(wr, edge.To.CPos, map);
+			var first = GetScreenPos(wr, node, map);
+			var last = GetScreenPos(wr, edge.To, map);
 
 			if (edge.EdgeType == EdgeType.Intra)
 			{
@@ -219,8 +153,8 @@ namespace OpenRA.Mods.Common.Traits
 
 				Game.Renderer.WorldRgbaColorRenderer.DrawLine(a, last, iz, Color.CornflowerBlue);
 
-				//DrawTargetMarker(wr, Color.Green, last);
-				//DrawTargetMarker(wr, Color.Green, first);
+				// DrawTargetMarker(wr, Color.Green, last);
+				// DrawTargetMarker(wr, Color.Green, first);
 			}
 			else
 			{
