@@ -447,7 +447,7 @@ namespace OpenRA.Mods.Common.Traits
 				var actorBits = default(LongBitSet<PlayerBitMask>);
 				var crushables = actor.TraitsImplementing<ICrushable>();
 				var mobile = actor.OccupiesSpace as Mobile;
-				var isMoving = mobile != null && mobile.CurrentMovementTypes.HasFlag(MovementType.Horizontal);
+				var isMoving = mobile != null && mobile.CurrentMovementTypes.HasMovementType(MovementType.Horizontal);
 
 				if (crushables.Any())
 				{
