@@ -20,6 +20,7 @@ namespace OpenRA.Primitives
 		bool Empty { get; }
 		T Peek();
 		T Pop();
+		void Clear();
 	}
 
 	public class PriorityQueue<T> : IPriorityQueue<T>
@@ -89,6 +90,14 @@ namespace OpenRA.Primitives
 			if (--index < 0)
 				index = (1 << --level) - 1;
 			return ret;
+		}
+
+		public void Clear()
+		{
+			items.Clear();
+			items.Add(new T[1]);
+			level = 0;
+			index = 0;
 		}
 
 		void BubbleInto(int intoLevel, int intoIndex, T val)

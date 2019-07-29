@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using OpenRA.Mods.Common.Traits;
 using OpenRA.Primitives;
 using OpenRA.Traits;
@@ -19,6 +20,11 @@ namespace OpenRA.Mods.Common.Pathfinder
 			Left = left;
 			Right = right;
 			Bottom = bottom;
+		}
+
+		public bool Contains(CPos cell)
+		{
+			return cell.X >= Left && cell.X <= Right && cell.Y >= Top && cell.Y <= Bottom;
 		}
 	}
 
@@ -45,11 +51,12 @@ namespace OpenRA.Mods.Common.Pathfinder
 
 	public class Edge
 	{
-		public Edge(CPos to, EdgeType edgeType, int cost)
+		public Edge(CPos to, EdgeType edgeType, int cost, List<CPos> path)
 		{
 			To = to;
 			EdgeType = edgeType;
 			Cost = cost;
+			Path = path;
 		}
 
 		public EdgeType EdgeType { get; set; }
@@ -91,7 +98,7 @@ namespace OpenRA.Mods.Common.Pathfinder
 		readonly int maxLevel;
 
 		public List<Cluster>[] Clusters;
-
+		readonly Dictionary<Tuple<CPos, CPos>, bool> distanceCalculated = new Dictionary<Tuple<CPos, CPos>, bool>();
 		HGraph graph = new HGraph();
 
 		public ClusterBuilder(World world, Locomotor locomotor, int maxLevel)
@@ -166,9 +173,42 @@ namespace OpenRA.Mods.Common.Pathfinder
 
 			foreach (var cluster in clusters)
 			{
+				CreateIntraEdges(cluster);
 			}
 
 			return clusters;
+		}
+
+		void CreateIntraEdges(Cluster cluster)
+		{
+			var clusterPathGraph = PathSearch.GetClusterPathGraph(world, cluster.Boundaries, locomotor);
+			var dijkstra = new Dijkstra(clusterPathGraph);
+
+			foreach (var node in cluster.Nodes)
+			{
+				var paths = dijkstra.Search(node, cluster.Nodes);
+
+				foreach (var path in paths)
+				{
+					var tuple = Tuple.Create(node, path.Target);
+					var invtuple = Tuple.Create(path.Target, node);
+
+					if (distanceCalculated.ContainsKey(tuple))
+						continue;
+
+					// var edge2 = new Edge(toEntrancePoint, node1, EdgeType.Intra, path.Cost, path.Path);
+					graph.AddEdge(path.Target, node, EdgeType.Intra, path.Cost, path.Path);
+
+					var reversePath = new List<CPos>(path.Path);
+					reversePath.Reverse();
+
+					graph.AddEdge(node, path.Target, EdgeType.Intra, path.Cost, reversePath);
+
+					distanceCalculated[tuple] = distanceCalculated[invtuple] = true;
+				}
+
+				clusterPathGraph.Dispose();
+			}
 		}
 
 		public Cluster GetCluster(int x, int y)
@@ -309,14 +349,103 @@ namespace OpenRA.Mods.Common.Pathfinder
 	{
 		Dictionary<CPos, LinkedList<Edge>> edges = new Dictionary<CPos, LinkedList<Edge>>();
 
-		public void AddEdge(CPos cell, CPos to, EdgeType edgeType, int cost = 1)
+		public void AddEdge(CPos cell, CPos to, EdgeType edgeType, int cost = 1, List<CPos> pathPath = null)
 		{
-			edges.GetOrAdd(cell).AddLast(new Edge(to, edgeType, cost));
+			edges.GetOrAdd(cell).AddLast(new Edge(to, edgeType, cost, pathPath));
 		}
 
 		public IEnumerable<Edge> Edges(CPos cell)
 		{
 			return edges[cell];
+		}
+	}
+
+	public class Dijkstra
+	{
+		readonly IGraph<CellInfo> graph;
+		readonly PriorityQueue<GraphConnection> frontier;
+
+		public Dijkstra(IGraph<CellInfo> graph)
+		{
+			this.graph = graph;
+			frontier = new PriorityQueue<GraphConnection>(GraphConnection.ConnectionCostComparer);
+		}
+
+		public List<IntraClusterPath> Search(CPos @from, IEnumerable<CPos> targets)
+		{
+			frontier.Add(new GraphConnection(@from, 0));
+
+			var result = new List<IntraClusterPath>();
+			var counts = targets.Count() - 1;
+
+			graph[from] = new CellInfo(0, 0, from, CellStatus.Open);
+
+			while (!frontier.Empty)
+			{
+				var currentMinNode = frontier.Pop().Destination;
+				var currentCell = graph[currentMinNode];
+				graph[currentMinNode] = new CellInfo(currentCell.CostSoFar, currentCell.EstimatedTotal, currentCell.PreviousPos, CellStatus.Closed);
+
+				if (counts == 0)
+					break;
+
+				if (currentMinNode != from && targets.Contains(currentMinNode) && result.All(r => r.Target != currentMinNode))
+				{
+					var cc = currentCell;
+
+					var path = new List<CPos>();
+					while (true)
+					{
+						if (cc.PreviousPos == from || cc.PreviousPos == CPos.Zero)
+							break;
+
+						path.Add(cc.PreviousPos);
+						cc = graph[cc.PreviousPos];
+					}
+
+					result.Add(new IntraClusterPath(currentMinNode, path, currentCell.CostSoFar));
+					counts--;
+				}
+
+				foreach (var connection in graph.GetConnections(currentMinNode))
+				{
+					// Calculate the cost up to that point
+					var gCost = currentCell.CostSoFar + connection.Cost;
+
+					var neighborCPos = connection.Destination;
+					var neighborCell = graph[neighborCPos];
+
+					// Cost is even higher; next direction:
+					if (neighborCell.Status == CellStatus.Closed || gCost >= neighborCell.CostSoFar)
+						continue;
+
+					graph[neighborCPos] = new CellInfo(gCost, 0, currentMinNode, CellStatus.Open);
+
+					if (neighborCell.Status != CellStatus.Open)
+						frontier.Add(new GraphConnection(neighborCPos, gCost));
+				}
+			}
+
+			return result;
+		}
+
+		public void Reset()
+		{
+			frontier.Clear();
+		}
+	}
+
+	public class IntraClusterPath
+	{
+		public CPos Target { get; private set; }
+		public List<CPos> Path { get; private set; }
+		public int Cost { get; private set; }
+
+		public IntraClusterPath(CPos target, List<CPos> path, int cost)
+		{
+			Target = target;
+			Path = path;
+			Cost = cost;
 		}
 	}
 }

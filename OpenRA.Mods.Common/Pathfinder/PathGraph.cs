@@ -233,4 +233,148 @@ namespace OpenRA.Mods.Common.Pathfinder
 			pooledLayer.Dispose();
 		}
 	}
+
+	sealed class ClusterPathGraph : IGraph<CellInfo>
+	{
+		public Actor Actor { get; private set; }
+		public World World { get; private set; }
+		public Func<CPos, bool> CustomBlock { get; set; }
+		public Func<CPos, int> CustomCost { get; set; }
+		public int LaneBias { get; set; }
+		public bool InReverse { get; set; }
+		public Actor IgnoreActor { get; set; }
+
+		readonly CellConditions checkConditions;
+		readonly Boundaries boundaries;
+		readonly Locomotor locomotor;
+		readonly LocomotorInfo.WorldMovementInfo worldMovementInfo;
+		readonly CellInfoLayerPool.PooledCellInfoLayer pooledLayer;
+		readonly bool checkTerrainHeight;
+		CellLayer<CellInfo> groundInfo;
+
+		readonly Dictionary<byte, Pair<ICustomMovementLayer, CellLayer<CellInfo>>> customLayerInfo =
+			new Dictionary<byte, Pair<ICustomMovementLayer, CellLayer<CellInfo>>>();
+
+		public ClusterPathGraph(Boundaries boundaries, CellInfoLayerPool layerPool, Locomotor locomotor, World world, bool checkForBlocked)
+		{
+			pooledLayer = layerPool.Get();
+			groundInfo = pooledLayer.GetLayer();
+			var locomotorInfo = locomotor.Info;
+			this.boundaries = boundaries;
+			this.locomotor = locomotor;
+
+			World = world;
+			worldMovementInfo = locomotorInfo.GetWorldMovementInfo(world);
+			LaneBias = 1;
+			checkConditions = checkForBlocked ? CellConditions.TransientActors : CellConditions.None;
+			checkTerrainHeight = world.Map.Grid.MaximumTerrainHeight > 0;
+		}
+
+		// Sets of neighbors for each incoming direction. These exclude the neighbors which are guaranteed
+		// to be reached more cheaply by a path through our parent cell which does not include the current cell.
+		// For horizontal/vertical directions, the set is the three cells 'ahead'. For diagonal directions, the set
+		// is the three cells ahead, plus the two cells to the side, which we cannot exclude without knowing if
+		// the cell directly between them and our parent is passable.
+		static readonly CVec[][] DirectedNeighbors =
+		{
+			new[] { new CVec(-1, -1), new CVec(0, -1), new CVec(1, -1), new CVec(-1, 0), new CVec(-1, 1) },
+			new[] { new CVec(-1, -1), new CVec(0, -1), new CVec(1, -1) },
+			new[] { new CVec(-1, -1), new CVec(0, -1), new CVec(1, -1), new CVec(1, 0), new CVec(1, 1) },
+			new[] { new CVec(-1, -1), new CVec(-1, 0), new CVec(-1, 1) },
+			CVec.Directions,
+			new[] { new CVec(1, -1), new CVec(1, 0), new CVec(1, 1) },
+			new[] { new CVec(-1, -1), new CVec(-1, 0), new CVec(-1, 1), new CVec(0, 1), new CVec(1, 1) },
+			new[] { new CVec(-1, 1), new CVec(0, 1), new CVec(1, 1) },
+			new[] { new CVec(1, -1), new CVec(1, 0), new CVec(-1, 1), new CVec(0, 1), new CVec(1, 1) },
+		};
+
+		public List<GraphConnection> GetConnections(CPos position)
+		{
+			var info = position.Layer == 0 ? groundInfo : customLayerInfo[position.Layer].Second;
+			var previousPos = info[position].PreviousPos;
+
+			var dx = position.X - previousPos.X;
+			var dy = position.Y - previousPos.Y;
+			var index = dy * 3 + dx + 4;
+
+			var directions = DirectedNeighbors[index];
+			var validNeighbors = new List<GraphConnection>(directions.Length);
+			for (var i = 0; i < directions.Length; i++)
+			{
+				var neighbor = position + directions[i];
+
+				if (!boundaries.Contains(neighbor))
+					continue;
+
+				var movementCost = GetCostToNode(neighbor, directions[i]);
+				if (movementCost != Constants.InvalidNode)
+					validNeighbors.Add(new GraphConnection(neighbor, movementCost));
+			}
+
+			return validNeighbors;
+		}
+
+		int GetCostToNode(CPos destNode, CVec direction)
+		{
+			var movementCost = locomotor.MovementCostToEnterCell(Actor, destNode, IgnoreActor, checkConditions);
+
+			if (movementCost != int.MaxValue && !(CustomBlock != null && CustomBlock(destNode)))
+				return CalculateCellCost(destNode, direction, movementCost);
+
+			return Constants.InvalidNode;
+		}
+
+		int CalculateCellCost(CPos neighborCPos, CVec direction, int movementCost)
+		{
+			var cellCost = movementCost;
+
+			if (direction.X * direction.Y != 0)
+				cellCost = (cellCost * 34) / 24;
+
+			if (CustomCost != null)
+			{
+				var customCost = CustomCost(neighborCPos);
+				if (customCost == Constants.InvalidNode)
+					return Constants.InvalidNode;
+
+				cellCost += customCost;
+			}
+
+			// Prevent units from jumping over height discontinuities
+			if (checkTerrainHeight && neighborCPos.Layer == 0)
+			{
+				var from = neighborCPos - direction;
+				if (Math.Abs(World.Map.Height[neighborCPos] - World.Map.Height[from]) > 1)
+					return Constants.InvalidNode;
+			}
+
+			// Directional bonuses for smoother flow!
+			if (LaneBias != 0)
+			{
+				var ux = neighborCPos.X + (InReverse ? 1 : 0) & 1;
+				var uy = neighborCPos.Y + (InReverse ? 1 : 0) & 1;
+
+				if ((ux == 0 && direction.Y < 0) || (ux == 1 && direction.Y > 0))
+					cellCost += LaneBias;
+
+				if ((uy == 0 && direction.X < 0) || (uy == 1 && direction.X > 0))
+					cellCost += LaneBias;
+			}
+
+			return cellCost;
+		}
+
+		public CellInfo this[CPos pos]
+		{
+			get { return (pos.Layer == 0 ? groundInfo : customLayerInfo[pos.Layer].Second)[pos]; }
+			set { (pos.Layer == 0 ? groundInfo : customLayerInfo[pos.Layer].Second)[pos] = value; }
+		}
+
+		public void Dispose()
+		{
+			groundInfo = null;
+			customLayerInfo.Clear();
+			pooledLayer.Dispose();
+		}
+	}
 }
