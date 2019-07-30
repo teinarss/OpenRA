@@ -248,7 +248,7 @@ namespace OpenRA.Mods.Common.Pathfinder
 		readonly Boundaries boundaries;
 		readonly Locomotor locomotor;
 		readonly LocomotorInfo.WorldMovementInfo worldMovementInfo;
-		readonly CellInfoLayerPool.PooledCellInfoLayer pooledLayer;
+		CellInfoLayerPool.PooledCellInfoLayer pooledLayer;
 		readonly bool checkTerrainHeight;
 		CellLayer<CellInfo> groundInfo;
 
@@ -257,6 +257,7 @@ namespace OpenRA.Mods.Common.Pathfinder
 
 		public ClusterPathGraph(Boundaries boundaries, CellInfoLayerPool layerPool, Locomotor locomotor, World world, bool checkForBlocked)
 		{
+			cellInfoLayerPool = layerPool;
 			pooledLayer = layerPool.Get();
 			groundInfo = pooledLayer.GetLayer();
 			var locomotorInfo = locomotor.Info;
@@ -287,6 +288,8 @@ namespace OpenRA.Mods.Common.Pathfinder
 			new[] { new CVec(-1, 1), new CVec(0, 1), new CVec(1, 1) },
 			new[] { new CVec(1, -1), new CVec(1, 0), new CVec(-1, 1), new CVec(0, 1), new CVec(1, 1) },
 		};
+
+		CellInfoLayerPool cellInfoLayerPool;
 
 		public List<GraphConnection> GetConnections(CPos position)
 		{
@@ -375,6 +378,85 @@ namespace OpenRA.Mods.Common.Pathfinder
 			groundInfo = null;
 			customLayerInfo.Clear();
 			pooledLayer.Dispose();
+
+			pooledLayer = cellInfoLayerPool.Get();
+
+			groundInfo = pooledLayer.GetLayer();
+		}
+	}
+
+	public class ExtendedGraph : IGraph<CellInfo>
+	{
+		readonly IGraph<CellInfo> originalGraph;
+
+		Dictionary<CPos, LinkedList<Edge>> edges = new Dictionary<CPos, LinkedList<Edge>>();
+
+		public ExtendedGraph(IGraph<CellInfo> originalGraph, CPos start, CPos target)
+		{
+			this.originalGraph = originalGraph;
+		}
+
+		public void AddEdge(CPos cell, CPos to, EdgeType edgeType, int cost = 1, List<CPos> pathPath = null)
+		{
+			edges.GetOrAdd(cell).AddLast(new Edge(to, edgeType, cost, pathPath));
+		}
+
+		public void Dispose()
+		{
+			throw new NotImplementedException();
+		}
+
+		public List<GraphConnection> GetConnections(CPos cell)
+		{
+			LinkedList<Edge> adj;
+
+			// If the target node is in the extension...
+			if (edges.TryGetValue(cell, out adj))
+			{
+				var validNeighbors = new List<GraphConnection>(adj.Count);
+				foreach (var edge in adj)
+					validNeighbors.Add(new GraphConnection(edge.To, edge.Cost));
+
+				return validNeighbors;
+			}
+			else // If the target node is a neighbor of an extension node...
+			{
+				var graphConnections = originalGraph.GetConnections(cell);
+
+				var validNeighbors = new List<GraphConnection>(graphConnections);
+				foreach (var extendedNode in edges)
+				{
+					foreach (var extendedNodeEdge in extendedNode.Value)
+					{
+						if (extendedNodeEdge.To == cell)
+						{
+							validNeighbors.Add(new GraphConnection(extendedNode.Key, extendedNodeEdge.Cost));
+							break;
+						}
+					}
+				}
+
+				return validNeighbors;
+			}
+
+		}
+
+		public CellInfo this[CPos pos]
+		{
+			get { throw new NotImplementedException(); }
+			set { throw new NotImplementedException(); }
+		}
+
+		public Func<CPos, bool> CustomBlock { get; set; }
+		public Func<CPos, int> CustomCost { get; set; }
+		public int LaneBias { get; set; }
+		public bool InReverse { get; set; }
+		public Actor IgnoreActor { get; set; }
+		public World World { get; private set; }
+		public Actor Actor { get; private set; }
+		public void Reset()
+		{
+			throw new NotImplementedException();
 		}
 	}
 }
