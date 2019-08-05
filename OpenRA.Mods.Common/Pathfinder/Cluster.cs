@@ -73,17 +73,28 @@ namespace OpenRA.Mods.Common.Pathfinder
 
 	public class ClustersManager
 	{
+		readonly int clustersW;
+		readonly int clusterSize;
 		public HGraph Graph { get; private set; }
 		public List<Cluster> Clusters;
 
-		public ClustersManager(HGraph graph)
+		public ClustersManager(HGraph graph, int clustersW, int clusterSize)
 		{
+			this.clustersW = clustersW;
+			this.clusterSize = clusterSize;
 			Graph = graph;
 		}
 
 		public void Add(List<Cluster> buildCluster)
 		{
 			Clusters = buildCluster;
+		}
+
+		public Cluster GetCluster(CPos cell)
+		{
+			var x = cell.X / clusterSize;
+			var y = cell.Y / clusterSize;
+			return Clusters[y * clustersW + x];
 		}
 	}
 
@@ -113,7 +124,12 @@ namespace OpenRA.Mods.Common.Pathfinder
 
 		public ClustersManager Build()
 		{
-			var clusters = new ClustersManager(graph);
+			var width = map.MapSize.X;
+			var clustersW = width / ClusterSize;
+			if (width % ClusterSize > 0)
+				clustersW++;
+
+			var clusters = new ClustersManager(graph, clustersW, ClusterSize);
 			var clusterSize = ClusterSize;
 			for (int level = 0; level < maxLevel; level++)
 			{
@@ -207,6 +223,7 @@ namespace OpenRA.Mods.Common.Pathfinder
 					distanceCalculated[tuple] = distanceCalculated[invtuple] = true;
 				}
 
+				dijkstra.Reset();
 				clusterPathGraph.Dispose();
 			}
 		}

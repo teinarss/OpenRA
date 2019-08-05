@@ -36,6 +36,8 @@ namespace OpenRA.Mods.Common.Traits
 		List<CPos> FindUnitPath(CPos source, CPos target, Actor self, Actor ignoreActor, BlockedByActor check);
 
 		List<CPos> FindUnitPathToRange(CPos source, SubCell srcSub, WPos target, WDist range, Actor self, BlockedByActor check);
+		List<CPos> FindUnitPathHpa(CPos source, CPos target, Actor self, Actor ignoreActor);
+
 
 		/// <summary>
 		/// Calculates a path given a search specification
@@ -60,6 +62,42 @@ namespace OpenRA.Mods.Common.Traits
 		public PathFinder(World world)
 		{
 			this.world = world;
+		}
+
+		public List<CPos> FindUnitPathHpa(CPos source, CPos target, Actor self, Actor ignoreActor)
+		{
+			var mobile = self.Trait<Mobile>();
+			var locomotor = mobile.Locomotor;
+
+			if (!cached)
+			{
+				domainIndex = world.WorldActor.TraitOrDefault<DomainIndex>();
+				cached = true;
+			}
+
+			// If a water-land transition is required, bail early
+			if (domainIndex != null && !domainIndex.IsPassable(source, target, locomotor.Info))
+				return EmptyPath;
+
+			var distance = source - target;
+			if (source.Layer == target.Layer && distance.LengthSquared < 3 && locomotor.CanMoveFreelyInto(self, target, null, CellConditions.All))
+				return new List<CPos> { target };
+
+			List<CPos> pb;
+
+			var sourceCluster = locomotor.ClustersManager.GetCluster(source);
+
+			var graph1 = PathSearch.GetClusterPathGraph(world, sourceCluster.Boundaries, locomotor);
+			var dijkstra = new Dijkstra(graph1);
+			var intraClusterPaths = dijkstra.Search(source, sourceCluster.Nodes);
+
+			var targetCluster = locomotor.ClustersManager.GetCluster(target);
+
+			using (var fromSrc = PathSearch.FromPoint(world, locomotor, self, target, source, true).WithIgnoredActor(ignoreActor))
+			using (var fromDest = PathSearch.FromPoint(world, locomotor, self, source, target, true).WithIgnoredActor(ignoreActor).Reverse())
+				pb = FindBidiPath(fromSrc, fromDest);
+
+			return pb;
 		}
 
 		public List<CPos> FindUnitPath(CPos source, CPos target, Actor self, Actor ignoreActor, BlockedByActor check)

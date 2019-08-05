@@ -419,8 +419,9 @@ namespace OpenRA.Mods.Common.Pathfinder
 
 				return validNeighbors;
 			}
-			else // If the target node is a neighbor of an extension node...
+			else
 			{
+				// If the target node is a neighbor of an extension node...
 				var graphConnections = originalGraph.GetConnections(cell);
 
 				var validNeighbors = new List<GraphConnection>(graphConnections);
@@ -438,7 +439,6 @@ namespace OpenRA.Mods.Common.Pathfinder
 
 				return validNeighbors;
 			}
-
 		}
 
 		public CellInfo this[CPos pos]
