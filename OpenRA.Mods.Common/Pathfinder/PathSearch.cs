@@ -80,6 +80,26 @@ namespace OpenRA.Mods.Common.Pathfinder
 
 			return search;
 		}
+		
+		public static IPathSearch FromPointHpa(ExtendedGraph graph, World world, Locomotor locomotor, Actor self, CPos @from, CPos target, bool checkForBlocked)
+		{
+			var search = new PathSearch(graph)
+			{
+				heuristic = DefaultEstimator(target)
+			};
+
+			search.isGoal = loc =>
+			{
+				var locInfo = search.Graph[loc];
+				return locInfo.EstimatedTotal - locInfo.CostSoFar == 0;
+			};
+
+			if (world.Map.Contains(from))
+				search.AddInitialCell(from);
+
+			return search;
+		}
+
 
 		public static IPathSearch FromPoints(World world, Locomotor locomotor, Actor self, IEnumerable<CPos> froms, CPos target, BlockedByActor check)
 		{

@@ -85,11 +85,10 @@ namespace OpenRA.Mods.Common.Traits
 
 			List<CPos> pb;
 
-			var sourceCluster = locomotor.ClustersManager.GetCluster(source);
-
-			var graph1 = PathSearch.GetClusterPathGraph(world, sourceCluster.Boundaries, locomotor);
-			var dijkstra = new Dijkstra(graph1);
-			var intraClusterPaths = dijkstra.Search(source, sourceCluster.Nodes);
+			var hGraph = locomotor.ClustersManager.Graph;
+			var eGraph = new ExtendedGraph(hGraph);
+			Ouuou(eGraph, locomotor, source);
+			Ouuou(eGraph, locomotor, target);
 
 			var targetCluster = locomotor.ClustersManager.GetCluster(target);
 
@@ -98,6 +97,18 @@ namespace OpenRA.Mods.Common.Traits
 				pb = FindBidiPath(fromSrc, fromDest);
 
 			return pb;
+		}
+
+		void Ouuou(ExtendedGraph extendedGraph, Locomotor locomotor, CPos cell)
+		{
+			var sourceCluster = locomotor.ClustersManager.GetCluster(cell);
+
+			var graph = PathSearch.GetClusterPathGraph(world, sourceCluster.Boundaries, locomotor);
+			var dijkstra = new Dijkstra(graph);
+			var intraClusterPaths = dijkstra.Search(cell, sourceCluster.Nodes);
+
+			foreach (var intraClusterPath in intraClusterPaths)
+				extendedGraph.AddEdge(cell, intraClusterPath.Target, EdgeType.Intra, intraClusterPath.Cost, intraClusterPath.Path);
 		}
 
 		public List<CPos> FindUnitPath(CPos source, CPos target, Actor self, Actor ignoreActor, BlockedByActor check)

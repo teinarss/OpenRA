@@ -362,7 +362,7 @@ namespace OpenRA.Mods.Common.Pathfinder
 		}
 	}
 
-	public class HGraph
+	public class HGraph : IGraph<CellInfo>
 	{
 		Dictionary<CPos, LinkedList<Edge>> edges = new Dictionary<CPos, LinkedList<Edge>>();
 
@@ -375,6 +375,35 @@ namespace OpenRA.Mods.Common.Pathfinder
 		{
 			return edges[cell];
 		}
+
+		public Edge GetEdge(CPos from, CPos to)
+		{
+			return edges[from].SingleOrDefault(e => e.To == to);
+		}
+
+		public void Dispose()
+		{
+			throw new NotImplementedException();
+		}
+
+		public List<GraphConnection> GetConnections(CPos position)
+		{
+			throw new NotImplementedException();
+		}
+
+		public CellInfo this[CPos pos]
+		{
+			get { throw new NotImplementedException(); }
+			set { throw new NotImplementedException(); }
+		}
+
+		public Func<CPos, bool> CustomBlock { get; set; }
+		public Func<CPos, int> CustomCost { get; set; }
+		public int LaneBias { get; set; }
+		public bool InReverse { get; set; }
+		public Actor IgnoreActor { get; set; }
+		public World World { get; private set; }
+		public Actor Actor { get; private set; }
 	}
 
 	public class Dijkstra

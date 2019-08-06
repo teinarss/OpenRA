@@ -391,7 +391,7 @@ namespace OpenRA.Mods.Common.Pathfinder
 
 		Dictionary<CPos, LinkedList<Edge>> edges = new Dictionary<CPos, LinkedList<Edge>>();
 
-		public ExtendedGraph(IGraph<CellInfo> originalGraph, CPos start, CPos target)
+		public ExtendedGraph(IGraph<CellInfo> originalGraph)
 		{
 			this.originalGraph = originalGraph;
 		}
