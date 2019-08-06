@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using OpenRA.Mods.Common.Traits;
 using OpenRA.Primitives;
+using OpenRA.Server;
 using OpenRA.Traits;
 
 namespace OpenRA.Mods.Common.Pathfinder
@@ -110,11 +111,12 @@ namespace OpenRA.Mods.Common.Pathfinder
 
 		public List<Cluster>[] Clusters;
 		readonly Dictionary<Tuple<CPos, CPos>, bool> distanceCalculated = new Dictionary<Tuple<CPos, CPos>, bool>();
-		HGraph graph = new HGraph();
+		HGraph graph;
 
 		public ClusterBuilder(World world, Locomotor locomotor, int maxLevel)
 		{
 			map = world.Map;
+			graph = new HGraph(map);
 			this.world = world;
 			this.locomotor = locomotor;
 			this.maxLevel = maxLevel;
@@ -364,7 +366,13 @@ namespace OpenRA.Mods.Common.Pathfinder
 
 	public class HGraph : IGraph<CellInfo>
 	{
+		CellLayer<CellInfo> infos;
 		Dictionary<CPos, LinkedList<Edge>> edges = new Dictionary<CPos, LinkedList<Edge>>();
+
+		public HGraph(Map map)
+		{
+			infos = new CellLayer<CellInfo>(map);
+		}
 
 		public void AddEdge(CPos cell, CPos to, EdgeType edgeType, int cost = 1, List<CPos> pathPath = null)
 		{
@@ -383,18 +391,22 @@ namespace OpenRA.Mods.Common.Pathfinder
 
 		public void Dispose()
 		{
-			throw new NotImplementedException();
 		}
 
 		public List<GraphConnection> GetConnections(CPos position)
 		{
-			throw new NotImplementedException();
+			var list = edges[position];
+			var result = new List<GraphConnection>();
+			foreach (var edge in list)
+				result.Add(new GraphConnection(edge.To, edge.Cost));
+
+			return result;
 		}
 
 		public CellInfo this[CPos pos]
 		{
-			get { throw new NotImplementedException(); }
-			set { throw new NotImplementedException(); }
+			get { return infos[pos]; }
+			set { infos[pos] = value; }
 		}
 
 		public Func<CPos, bool> CustomBlock { get; set; }

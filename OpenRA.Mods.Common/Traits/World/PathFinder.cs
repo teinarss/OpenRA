@@ -91,6 +91,7 @@ namespace OpenRA.Mods.Common.Traits
 			Ouuou(eGraph, locomotor, target);
 
 			var targetCluster = locomotor.ClustersManager.GetCluster(target);
+			var path = FindPath(hpa);
 
 			using (var fromSrc = PathSearch.FromPoint(world, locomotor, self, target, source, true).WithIgnoredActor(ignoreActor))
 			using (var fromDest = PathSearch.FromPoint(world, locomotor, self, source, target, true).WithIgnoredActor(ignoreActor).Reverse())

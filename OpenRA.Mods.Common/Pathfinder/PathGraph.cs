@@ -390,9 +390,11 @@ namespace OpenRA.Mods.Common.Pathfinder
 		readonly IGraph<CellInfo> originalGraph;
 
 		Dictionary<CPos, LinkedList<Edge>> edges = new Dictionary<CPos, LinkedList<Edge>>();
+		CellLayer<CellInfo> infos;
 
-		public ExtendedGraph(IGraph<CellInfo> originalGraph)
+		public ExtendedGraph(Map map, IGraph<CellInfo> originalGraph)
 		{
+			infos = new CellLayer<CellInfo>(map);
 			this.originalGraph = originalGraph;
 		}
 
@@ -443,8 +445,8 @@ namespace OpenRA.Mods.Common.Pathfinder
 
 		public CellInfo this[CPos pos]
 		{
-			get { throw new NotImplementedException(); }
-			set { throw new NotImplementedException(); }
+			get { return infos[pos]; }
+			set { infos[pos] = value; }
 		}
 
 		public Func<CPos, bool> CustomBlock { get; set; }
