@@ -38,13 +38,16 @@ namespace OpenRA
 		readonly IVertexBuffer<Vertex> tempBuffer;
 		readonly Stack<Rectangle> scissorState = new Stack<Rectangle>();
 
+		IFrameBuffer screenBuffer;
+		Sprite screenSprite;
+
 		SheetBuilder fontSheetBuilder;
 		readonly IPlatform platform;
 
 		float depthScale;
 		float depthOffset;
 
-		Size lastResolution = new Size(-1, -1);
+		Size lastBufferSize = new Size(-1, -1);
 		int2 lastScroll = new int2(-1, -1);
 		float lastZoom = -1f;
 		ITexture currentPaletteTexture;
@@ -123,26 +126,49 @@ namespace OpenRA
 		public void BeginFrame(int2 scroll, float zoom)
 		{
 			Context.Clear();
+
+			// Cache property results to avoid the unnecessary overhead of repeat queries
+			var resolution = Resolution;
+			var scale = WindowScale;
+
+			var backingResolution = new Size((int)(scale * resolution.Width), (int)(scale * resolution.Height));
+			var backingBufferSize = backingResolution.NextPowerOf2();
+			if (screenSprite == null || backingBufferSize != screenSprite.Sheet.Size)
+			{
+				if (screenBuffer != null)
+					screenBuffer.Dispose();
+
+				// Render into a frame buffer to support render != window sizes
+				// and reading data back for screenshots
+				screenBuffer = Context.CreateFrameBuffer(backingBufferSize);
+				var screenSheet = new Sheet(SheetType.BGRA, screenBuffer.Texture);
+
+				// Flip sprite in Y to match OpenGL's bottom-left origin
+				var screenBounds = Rectangle.FromLTRB(0, backingResolution.Height, backingResolution.Width, 0);
+				screenSprite = new Sprite(screenSheet, screenBounds, TextureChannel.RGBA);
+			}
+
+			screenBuffer.Bind();
 			SetViewportParams(scroll, zoom);
 		}
 
 		public void SetViewportParams(int2 scroll, float zoom)
 		{
-			// PERF: Calling SetViewportParams on each renderer is slow. Only call it when things change.
-			var resolutionChanged = lastResolution != Resolution;
-			if (resolutionChanged)
-			{
-				lastResolution = Resolution;
-				SpriteRenderer.SetViewportParams(lastResolution, 0f, 0f, 1f, int2.Zero);
-			}
+			var bufferSize = Resolution.NextPowerOf2();
 
-			// If zoom evaluates as different due to floating point weirdness that's OK, setting the parameters again is harmless.
-			if (resolutionChanged || lastScroll != scroll || lastZoom != zoom)
+			// PERF: Calling SetViewportParams on each renderer is slow. Only call it when things change.
+			// If zoom evaluates as different due to floating point weirdness that's OK, it will be going away soon
+			if (lastBufferSize != bufferSize || lastScroll != scroll || lastZoom != zoom)
 			{
+				if (lastBufferSize != bufferSize)
+					SpriteRenderer.SetViewportParams(bufferSize, 0f, 0f, 1f, int2.Zero);
+
+				WorldSpriteRenderer.SetViewportParams(bufferSize, depthScale, depthOffset, zoom, scroll);
+				WorldModelRenderer.SetViewportParams(bufferSize, zoom, scroll);
+
+				lastBufferSize = bufferSize;
 				lastScroll = scroll;
 				lastZoom = zoom;
-				WorldSpriteRenderer.SetViewportParams(lastResolution, depthScale, depthOffset, zoom, scroll);
-				WorldModelRenderer.SetViewportParams(lastResolution, zoom, scroll);
 			}
 		}
 
@@ -162,6 +188,15 @@ namespace OpenRA
 		public void EndFrame(IInputHandler inputHandler)
 		{
 			Flush();
+
+			screenBuffer.Unbind();
+
+			// Render the compositor buffer to the screen
+			// HACK / PERF: Fudge the coordinates to cover the actual window while keeping the buffer viewport parameters
+			// This saves us two redundant (and expensive) SetViewportParams each frame
+			RgbaSpriteRenderer.DrawSprite(screenSprite, new float3(0, lastBufferSize.Height, 0), new float3(lastBufferSize.Width, -lastBufferSize.Height, 0));
+			Flush();
+
 			Window.PumpInput(inputHandler);
 			Context.Present();
 		}
