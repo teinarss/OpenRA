@@ -655,6 +655,16 @@ namespace OpenRA
 			{
 				++RenderFrame;
 
+				// Prepare renderables (i.e. render voxels) before calling BeginFrame
+				using (new PerfSample("render_prepare"))
+				{
+					Renderer.WorldModelRenderer.BeginFrame();
+					if (worldRenderer != null && !worldRenderer.World.IsLoadingGameSave)
+						worldRenderer.PrepareRenderables();
+					Ui.PrepareRenderables();
+					Renderer.WorldModelRenderer.EndFrame();
+				}
+
 				// worldRenderer is null during the initial install/download screen
 				if (worldRenderer != null)
 				{
@@ -670,10 +680,6 @@ namespace OpenRA
 
 				using (new PerfSample("render_widgets"))
 				{
-					Renderer.WorldModelRenderer.BeginFrame();
-					Ui.PrepareRenderables();
-					Renderer.WorldModelRenderer.EndFrame();
-
 					Ui.Draw();
 
 					if (ModData != null && ModData.CursorProvider != null)
