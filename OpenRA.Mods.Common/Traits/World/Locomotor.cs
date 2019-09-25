@@ -186,7 +186,7 @@ namespace OpenRA.Mods.Common.Traits
 		public virtual object Create(ActorInitializer init) { return new Locomotor(init.Self, this); }
 	}
 
-	public class Locomotor : IWorldLoaded
+	public class Locomotor : IWorldLoaded, ISync
 	{
 		struct CellCache
 		{
@@ -211,7 +211,20 @@ namespace OpenRA.Mods.Common.Traits
 
 		LocomotorInfo.TerrainInfo[] terrainInfos;
 		World world;
+
 		readonly HashSet<CPos> dirtyCells = new HashSet<CPos>();
+
+		[Sync]
+		public int CacheHash
+		{
+			get
+			{
+				var hash = 0;
+				foreach (var cells in dirtyCells)
+					hash ^= Sync.HashCPos(cells);
+				return hash;
+			}
+		}
 
 		IActorMap actorMap;
 		bool sharesCell;
