@@ -36,8 +36,7 @@ namespace OpenRA.Mods.Common.Traits
 		List<CPos> FindUnitPath(CPos source, CPos target, Actor self, Actor ignoreActor, BlockedByActor check);
 
 		List<CPos> FindUnitPathToRange(CPos source, SubCell srcSub, WPos target, WDist range, Actor self, BlockedByActor check);
-		List<CPos> FindUnitPathHpa(CPos source, CPos target, Actor self, Actor ignoreActor);
-
+		List<CPos> FindUnitPathHpa(CPos source, CPos target, Actor self, Actor ignoreActor, BlockedByActor check);
 
 		/// <summary>
 		/// Calculates a path given a search specification
@@ -64,7 +63,7 @@ namespace OpenRA.Mods.Common.Traits
 			this.world = world;
 		}
 
-		public List<CPos> FindUnitPathHpa(CPos source, CPos target, Actor self, Actor ignoreActor)
+		public List<CPos> FindUnitPathHpa(CPos source, CPos target, Actor self, Actor ignoreActor, BlockedByActor check)
 		{
 			var mobile = self.Trait<Mobile>();
 			var locomotor = mobile.Locomotor;
@@ -80,7 +79,7 @@ namespace OpenRA.Mods.Common.Traits
 				return EmptyPath;
 
 			var distance = source - target;
-			if (source.Layer == target.Layer && distance.LengthSquared < 3 && locomotor.CanMoveFreelyInto(self, target, null, CellConditions.All))
+			if (source.Layer == target.Layer && distance.LengthSquared < 3 && locomotor.CanMoveFreelyInto(self, target, BlockedByActor.All, ignoreActor))
 				return new List<CPos> { target };
 
 			List<CPos> pb;
@@ -93,8 +92,8 @@ namespace OpenRA.Mods.Common.Traits
 			var targetCluster = locomotor.ClustersManager.GetCluster(target);
 			var path = FindPath(hpa);
 
-			using (var fromSrc = PathSearch.FromPoint(world, locomotor, self, target, source, true).WithIgnoredActor(ignoreActor))
-			using (var fromDest = PathSearch.FromPoint(world, locomotor, self, source, target, true).WithIgnoredActor(ignoreActor).Reverse())
+			using (var fromSrc = PathSearch.FromPoint(world, locomotor, self, target, source, check).WithIgnoredActor(ignoreActor))
+			using (var fromDest = PathSearch.FromPoint(world, locomotor, self, source, target, check).WithIgnoredActor(ignoreActor).Reverse())
 				pb = FindBidiPath(fromSrc, fromDest);
 
 			return pb;

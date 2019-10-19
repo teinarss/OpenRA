@@ -244,7 +244,6 @@ namespace OpenRA.Mods.Common.Pathfinder
 		public bool InReverse { get; set; }
 		public Actor IgnoreActor { get; set; }
 
-		readonly CellConditions checkConditions;
 		readonly Boundaries boundaries;
 		readonly Locomotor locomotor;
 		readonly LocomotorInfo.WorldMovementInfo worldMovementInfo;
@@ -267,7 +266,6 @@ namespace OpenRA.Mods.Common.Pathfinder
 			World = world;
 			worldMovementInfo = locomotorInfo.GetWorldMovementInfo(world);
 			LaneBias = 1;
-			checkConditions = checkForBlocked ? CellConditions.TransientActors : CellConditions.None;
 			checkTerrainHeight = world.Map.Grid.MaximumTerrainHeight > 0;
 		}
 
@@ -319,9 +317,9 @@ namespace OpenRA.Mods.Common.Pathfinder
 
 		int GetCostToNode(CPos destNode, CVec direction)
 		{
-			var movementCost = locomotor.MovementCostToEnterCell(Actor, destNode, IgnoreActor, checkConditions);
+			var movementCost = locomotor.MovementCostToEnterCell(Actor, destNode, BlockedByActor.All, IgnoreActor);
 
-			if (movementCost != int.MaxValue && !(CustomBlock != null && CustomBlock(destNode)))
+			if (movementCost != short.MaxValue && !(CustomBlock != null && CustomBlock(destNode)))
 				return CalculateCellCost(destNode, direction, movementCost);
 
 			return Constants.InvalidNode;
