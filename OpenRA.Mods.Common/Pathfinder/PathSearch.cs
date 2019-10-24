@@ -45,12 +45,11 @@ namespace OpenRA.Mods.Common.Pathfinder
 		{
 			considered = new LinkedList<Pair<CPos, int>>();
 		}
-		
+
 		public static IGraph<CellInfo> GetClusterPathGraph(World world, Boundaries boundaries, Locomotor locomotor)
 		{
 			return new ClusterPathGraph(boundaries, LayerPoolForWorld(world), locomotor, world, false);
 		}
-
 
 		public static IPathSearch Search(World world, Locomotor locomotor, Actor self, BlockedByActor check, Func<CPos, bool> goalCondition)
 		{
@@ -80,7 +79,7 @@ namespace OpenRA.Mods.Common.Pathfinder
 
 			return search;
 		}
-		
+
 		public static IPathSearch FromPointHpa(ExtendedGraph graph, World world, Locomotor locomotor, Actor self, CPos @from, CPos target, bool checkForBlocked)
 		{
 			var search = new PathSearch(graph)
@@ -99,7 +98,6 @@ namespace OpenRA.Mods.Common.Pathfinder
 
 			return search;
 		}
-
 
 		public static IPathSearch FromPoints(World world, Locomotor locomotor, Actor self, IEnumerable<CPos> froms, CPos target, BlockedByActor check)
 		{

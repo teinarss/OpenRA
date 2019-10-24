@@ -53,8 +53,9 @@ namespace OpenRA.Mods.Common.Pathfinder
 				return pb;
 			}
 		}
-		
-		public List<CPos> FindUnitPathHpa(CPos source, CPos target, Actor self, Actor ignoreActor)
+
+		/*
+		public List<CPos> FindUnitPathHpa(CPos source, CPos target, Actor self, Actor ignoreActor, BlockedByActor check)
 		{
 			using (new PerfSample("Pathfinder"))
 			{
@@ -64,15 +65,14 @@ namespace OpenRA.Mods.Common.Pathfinder
 				if (cachedPath != null)
 					return cachedPath;
 
-				var pb = pathFinder.FindUnitPathHpa(source, target, self, ignoreActor);
+				var pb = pathFinder.FindUnitPathHpa(source, target, self, ignoreActor, check);
 
 				cacheStorage.Store(key, pb);
 
 				return pb;
 			}
 		}
-
-
+		*/
 		public List<CPos> FindUnitPathToRange(CPos source, SubCell srcSub, WPos target, WDist range, Actor self, BlockedByActor check)
 		{
 			using (new PerfSample("Pathfinder"))

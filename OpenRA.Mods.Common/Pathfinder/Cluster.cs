@@ -354,8 +354,8 @@ namespace OpenRA.Mods.Common.Pathfinder
 		{
 			var nodes = getNodesInEdge(entrancePoint);
 
-			return locomotor.CanEnterCell(null, nodes.Item1, null) &&
-				   locomotor.CanEnterCell(null, nodes.Item2, null);
+			return locomotor.CanEnterCell(nodes.Item1) &&
+				   locomotor.CanEnterCell(nodes.Item2);
 		}
 
 		CPos GetNode(int left, int top)

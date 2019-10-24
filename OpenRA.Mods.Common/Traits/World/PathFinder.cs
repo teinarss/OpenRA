@@ -36,7 +36,6 @@ namespace OpenRA.Mods.Common.Traits
 		List<CPos> FindUnitPath(CPos source, CPos target, Actor self, Actor ignoreActor, BlockedByActor check);
 
 		List<CPos> FindUnitPathToRange(CPos source, SubCell srcSub, WPos target, WDist range, Actor self, BlockedByActor check);
-		List<CPos> FindUnitPathHpa(CPos source, CPos target, Actor self, Actor ignoreActor, BlockedByActor check);
 
 		/// <summary>
 		/// Calculates a path given a search specification

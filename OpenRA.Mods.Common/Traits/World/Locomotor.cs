@@ -13,6 +13,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using OpenRA.Graphics;
+using OpenRA.Mods.Common.Pathfinder;
 using OpenRA.Primitives;
 using OpenRA.Support;
 using OpenRA.Traits;
@@ -215,6 +216,7 @@ namespace OpenRA.Mods.Common.Traits
 
 		IActorMap actorMap;
 		bool sharesCell;
+		public ClustersManager ClustersManager;
 
 		public Locomotor(Actor self, LocomotorInfo info)
 		{
@@ -394,6 +396,9 @@ namespace OpenRA.Mods.Common.Traits
 			map.CustomTerrain.CellEntryChanged += UpdateCellCost;
 			map.Tiles.CellEntryChanged += UpdateCellCost;
 
+			var clusterBuilder = new ClusterBuilder(w, this, 1);
+			ClustersManager = clusterBuilder.Build();
+
 			// This section needs to run after WorldLoaded() because we need to be sure that all types of ICustomMovementLayer have been initialized.
 			w.AddFrameEndTask(_ =>
 			{
@@ -519,6 +524,19 @@ namespace OpenRA.Mods.Common.Traits
 
 				cache[cell] = new CellCache(cellImmovablePlayers, cellFlag, cellCrushablePlayers);
 			}
+		}
+
+		public bool CanEnterCell(CPos cell)
+		{
+			if (!world.Map.Contains(cell))
+				return false;
+
+			var cellCost = cell.Layer == 0 ? cellsCost[cell] : customLayerCellsCost[cell.Layer][cell];
+
+			if (cellCost == short.MaxValue)
+				return false;
+
+			return true;
 		}
 	}
 }
