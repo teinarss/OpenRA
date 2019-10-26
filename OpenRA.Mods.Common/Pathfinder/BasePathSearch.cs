@@ -27,6 +27,8 @@ namespace OpenRA.Mods.Common.Pathfinder
 		/// </summary>
 		IEnumerable<Pair<CPos, int>> Considered { get; }
 
+		bool Debug { get; set; }
+
 		Player Owner { get; }
 
 		int MaxCost { get; }

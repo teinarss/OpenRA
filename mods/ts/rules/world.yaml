@@ -371,6 +371,7 @@ World:
 		ShellmapRoot: MAINMENU_PRERELEASE_NOTIFICATION
 	ScriptTriggers:
 	TimeLimitManager:
+	PathfinderDebugOverlay:
 
 EditorWorld:
 	Inherits: ^BaseWorld

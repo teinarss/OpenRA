@@ -262,6 +262,7 @@ World:
 		ShellmapRoot: MENU_BACKGROUND
 	ScriptTriggers:
 	TimeLimitManager:
+	PathfinderDebugOverlay:
 
 EditorWorld:
 	Inherits: ^BaseWorld

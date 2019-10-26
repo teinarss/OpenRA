@@ -62,6 +62,7 @@ namespace OpenRA.Mods.Common.Traits
 			this.world = world;
 		}
 
+        /*
 		public List<CPos> FindUnitPathHpa(CPos source, CPos target, Actor self, Actor ignoreActor, BlockedByActor check)
 		{
 			var mobile = self.Trait<Mobile>();
@@ -92,11 +93,15 @@ namespace OpenRA.Mods.Common.Traits
 			var path = FindPath(hpa);
 
 			using (var fromSrc = PathSearch.FromPoint(world, locomotor, self, target, source, check).WithIgnoredActor(ignoreActor))
-			using (var fromDest = PathSearch.FromPoint(world, locomotor, self, source, target, check).WithIgnoredActor(ignoreActor).Reverse())
-				pb = FindBidiPath(fromSrc, fromDest);
+			using (var fromDest = PathSearch.FromPoint(world, locomotor, self, source, target, check)
+				.WithIgnoredActor(ignoreActor).Reverse())
+			{
+                pb = FindBidiPath(fromSrc, fromDest);
+			}
 
 			return pb;
 		}
+        */
 
 		void Ouuou(ExtendedGraph extendedGraph, Locomotor locomotor, CPos cell)
 		{
@@ -209,6 +214,13 @@ namespace OpenRA.Mods.Common.Traits
 		{
 			List<CPos> path = null;
 
+			var dbg = world.WorldActor.TraitOrDefault<PathfinderDebugOverlay>();
+			if (dbg != null && dbg.Visible)
+			{
+				fromSrc.Debug = true;
+				fromDest.Debug = true;
+			}
+
 			while (fromSrc.CanExpand && fromDest.CanExpand)
 			{
 				// make some progress on the first search
@@ -228,6 +240,13 @@ namespace OpenRA.Mods.Common.Traits
 					path = MakeBidiPath(fromSrc, fromDest, q);
 					break;
 				}
+			}
+
+			if (dbg != null && dbg.Visible)
+			{
+				dbg.Clear(fromSrc.Graph.Actor);
+				dbg.AddLayer(fromSrc.Graph.Actor, fromSrc.Considered, fromSrc.MaxCost, fromSrc.Owner);
+				dbg.AddLayer(fromSrc.Graph.Actor, fromDest.Considered, fromDest.MaxCost, fromDest.Owner);
 			}
 
 			fromSrc.Graph.Dispose();

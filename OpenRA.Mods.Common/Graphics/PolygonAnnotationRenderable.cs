@@ -50,4 +50,49 @@ namespace OpenRA.Mods.Common.Graphics
 		public void RenderDebugGeometry(WorldRenderer wr) { }
 		public Rectangle ScreenBounds(WorldRenderer wr) { return Rectangle.Empty; }
 	}
+
+	public struct FillRectAnnotationRenderable : IRenderable, IFinalizedRenderable
+	{
+		readonly WPos topLeft;
+		readonly WPos topRight;
+		readonly WPos bottomRight;
+		readonly WPos bottomLeft;
+		readonly WPos effectivePos;
+		readonly Color color;
+
+		public FillRectAnnotationRenderable(WPos topLeft, WPos topRight, WPos bottomRight, WPos bottomLeft, WPos effectivePos, Color color)
+		{
+			this.topLeft = topLeft;
+			this.topRight = topRight;
+			this.bottomRight = bottomRight;
+			this.bottomLeft = bottomLeft;
+			this.effectivePos = effectivePos;
+			this.color = color;
+		}
+
+		public WPos Pos { get { return effectivePos; } }
+		public PaletteReference Palette { get { return null; } }
+		public int ZOffset { get { return 0; } }
+		public bool IsDecoration { get { return true; } }
+
+		public IRenderable WithPalette(PaletteReference newPalette) { return new FillRectAnnotationRenderable(topLeft, topRight, bottomRight, bottomLeft, effectivePos, color); }
+		public IRenderable WithZOffset(int newOffset) { return new FillRectAnnotationRenderable(topLeft, topRight, bottomRight, bottomLeft, effectivePos, color); }
+		public IRenderable OffsetBy(WVec vec) { return new FillRectAnnotationRenderable(topLeft, topRight, bottomRight, bottomLeft, effectivePos + vec, color); }
+		public IRenderable AsDecoration() { return this; }
+
+		public IFinalizedRenderable PrepareRender(WorldRenderer wr) { return this; }
+		public void Render(WorldRenderer wr)
+		{
+			var tl = wr.Screen3DPosition(topLeft);
+			var tr = wr.Screen3DPosition(topRight);
+
+			var br = wr.Screen3DPosition(bottomRight);
+			var bl = wr.Screen3DPosition(bottomLeft);
+
+			Game.Renderer.WorldRgbaColorRenderer.FillRect(tl, tr, br, bl, color);
+		}
+
+		public void RenderDebugGeometry(WorldRenderer wr) { }
+		public Rectangle ScreenBounds(WorldRenderer wr) { return Rectangle.Empty; }
+	}
 }
