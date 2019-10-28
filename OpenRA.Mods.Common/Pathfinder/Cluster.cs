@@ -32,11 +32,13 @@ namespace OpenRA.Mods.Common.Pathfinder
 	public class Cluster
 	{
 		public Boundaries Boundaries { get; private set; }
+		public List<Component> Components { get; private set; }
 		public LinkedList<CPos> Nodes = new LinkedList<CPos>();
 
-		public Cluster(Boundaries boundaries)
+		public Cluster(Boundaries boundaries, List<Component> components)
 		{
 			Boundaries = boundaries;
+			Components = components;
 		}
 
 		public bool Contains(CPos cell)
@@ -113,9 +115,13 @@ namespace OpenRA.Mods.Common.Pathfinder
 		readonly Dictionary<Tuple<CPos, CPos>, bool> distanceCalculated = new Dictionary<Tuple<CPos, CPos>, bool>();
 		HGraph graph;
 
+		readonly CellLayer<int> components;
+		int componentId = 1;
+
 		public ClusterBuilder(World world, Locomotor locomotor, int maxLevel)
 		{
 			map = world.Map;
+			components = new CellLayer<int>(map);
 			graph = new HGraph(map);
 			this.world = world;
 			this.locomotor = locomotor;
@@ -166,7 +172,9 @@ namespace OpenRA.Mods.Common.Pathfinder
 
 					var boundaries = new Boundaries(top, left, left + width - 1, top + height - 1);
 
-					var cluster = new Cluster(boundaries);
+					var components = CreateComponents(boundaries);
+
+					var cluster = new Cluster(boundaries, components);
 
 					var clusterAbove = top > 0 ? GetCluster(clusters, clusterSize, x, y - 1) : null;
 					var clusterOnLeft = left > 0 ? GetCluster(clusters, clusterSize, x - 1, y) : null;
@@ -195,6 +203,59 @@ namespace OpenRA.Mods.Common.Pathfinder
 			}
 
 			return clusters;
+		}
+
+		List<Component> CreateComponents(Boundaries boundaries)
+		{
+			var components = new List<Component>();
+
+			for (var x = boundaries.Left; x < boundaries.Right; x++)
+			{
+				for (var y = boundaries.Top; y < boundaries.Bottom; y++)
+				{
+					var pos = new CPos(x, y);
+					if (this.components[pos] == 0 && locomotor.CanEnterCell(pos))
+						components.Add(Floodfill(x, y, boundaries));
+				}
+			}
+
+			return components;
+		}
+
+		Component Floodfill(int x, int y, Boundaries boundaries)
+		{
+			var queue = new Queue<CPos>();
+			var id = componentId++;
+			var start = new CPos(x, y);
+			queue.Enqueue(start);
+			var directions = CVec.Directions;
+
+			var cells = new HashSet<CPos>
+			{
+                start
+			};
+
+			while (queue.Count > 0)
+			{
+				var position = queue.Dequeue();
+
+				components[position] = id;
+
+				for (var i = 0; i < directions.Length; i++)
+				{
+					var neighbor = position + directions[i];
+
+					if (boundaries.Contains(neighbor) && !cells.Contains(neighbor) && locomotor.CanEnterCell(neighbor))
+					{
+                        cells.Add(neighbor);
+                        queue.Enqueue(neighbor);
+					}
+				}
+			}
+
+			var component = new Component(cells);
+
+			return component;
 		}
 
 		void CreateIntraEdges(Cluster cluster)
@@ -361,6 +422,16 @@ namespace OpenRA.Mods.Common.Pathfinder
 		CPos GetNode(int left, int top)
 		{
 			return new CPos(left, top);
+		}
+	}
+
+	public class Component
+	{
+		public HashSet<CPos> Cells { get; private set; }
+
+		public Component(HashSet<CPos> cells)
+		{
+			Cells = cells;
 		}
 	}
 

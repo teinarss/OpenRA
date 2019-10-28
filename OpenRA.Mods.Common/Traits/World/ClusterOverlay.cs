@@ -66,6 +66,8 @@ namespace OpenRA.Mods.Common.Traits
 			}
 		}
 
+		Color[] componentColors = new Color[] { Color.FromArgb(128, 255, 0, 0), Color.FromArgb(128, 0, 255, 0), Color.FromArgb(128, 0, 0, 255) };
+
 		void IRenderAboveWorld.RenderAboveWorld(Actor self, WorldRenderer wr)
 		{
 			if (!Enabled)
@@ -77,7 +79,7 @@ namespace OpenRA.Mods.Common.Traits
 			var topRightCorner = map.Grid.CellCorners[0][1];
 			var bottomRightCorner = map.Grid.CellCorners[0][2];
 			var bottomLeftCorner = map.Grid.CellCorners[0][3];
-
+			var tileSet = wr.World.Map.Rules.TileSet;
 			var width = 1 / wr.Viewport.Zoom;
 
 			var color = Color.FromArgb(232, 12, 131);
@@ -85,9 +87,42 @@ namespace OpenRA.Mods.Common.Traits
 
 			var edgeDrawn = new HashSet<Tuple<CPos, CPos>>();
 
+			var componentColor = 0;
+
 			var locomotorClustersManager = locomotor.ClustersManager;
 			foreach (var cluster in locomotorClustersManager.Clusters)
 			{
+				foreach (var component in cluster.Components)
+				{
+					foreach (var cell in component.Cells)
+					{
+						var tile = map.Tiles[cell];
+						var ti = tileSet.GetTileInfo(tile);
+						var ramp = ti != null ? ti.RampType : 0;
+
+						var corners = map.Grid.CellCorners[ramp];
+						var pos = map.CenterOfCell(cell);
+
+						var topLeft = pos + corners[0];
+						var topRight = pos + corners[1];
+						var bottomRight = pos + corners[2];
+						var bottomLeft = pos + corners[3];
+
+						var tl1 = wr.Screen3DPosition(topLeft);
+						var tr1 = wr.Screen3DPosition(topRight);
+
+						var br1 = wr.Screen3DPosition(bottomRight);
+						var bl1 = wr.Screen3DPosition(bottomLeft);
+
+						wcr.FillRect(tl1, tr1, br1, bl1, componentColors[componentColor]);
+					}
+
+					componentColor++;
+
+					if (componentColor >= componentColors.Length)
+						componentColor = 0;
+				}
+
 				var boundaries = cluster.Boundaries;
 				var tl = GetSceenPos(wr, boundaries.Left, boundaries.Top, map, topLeftCorner);
 				var tr = GetSceenPos(wr, boundaries.Right, boundaries.Top, map, topRightCorner);

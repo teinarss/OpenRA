@@ -234,6 +234,7 @@
 		AllowUnderActors: true
 		TerrainType: Veins
 	TerrainGeometryOverlay:
+	ClusterOverlay:
 	DebugVisualizations:
 	ExitsDebugOverlayManager:
 	CliffBackImpassabilityLayer:
