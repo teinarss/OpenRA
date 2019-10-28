@@ -75,7 +75,8 @@ namespace OpenRA.Mods.Common.Pathfinder
 			return search;
 		}
 
-		public static IPathSearch FromPoints(World world, Locomotor locomotor, Actor self, IEnumerable<CPos> froms, CPos target, BlockedByActor check)
+		public static IPathSearch FromPoints(World world, Locomotor locomotor, Actor self, IEnumerable<CPos> froms,
+			CPos target, BlockedByActor check, Func<CPos, int> customCost = null)
 		{
 			var graph = new PathGraph(LayerPoolForWorld(world), locomotor, self, world, check);
 			var search = new PathSearch(graph)
@@ -89,6 +90,9 @@ namespace OpenRA.Mods.Common.Pathfinder
 				return locInfo.EstimatedTotal - locInfo.CostSoFar == 0;
 			};
 
+			if (customCost != null)
+				graph.CustomCost = customCost;
+
 			foreach (var sl in froms.Where(sl => world.Map.Contains(sl)))
 				search.AddInitialCell(sl);
 
@@ -98,7 +102,12 @@ namespace OpenRA.Mods.Common.Pathfinder
 		protected override void AddInitialCell(CPos location)
 		{
 			var cost = heuristic(location);
-			Graph[location] = new CellInfo(0, cost, location, CellStatus.Open);
+
+			var costSoFar = 0;
+			if (Graph.CustomCost != null)
+				costSoFar += Graph.CustomCost(location);
+
+			Graph[location] = new CellInfo(costSoFar, cost, location, CellStatus.Open);
 			var connection = new GraphConnection(location, cost);
 			OpenQueue.Add(connection);
 			StartPoints.Add(connection);

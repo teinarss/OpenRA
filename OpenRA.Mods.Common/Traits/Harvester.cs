@@ -66,7 +66,7 @@ namespace OpenRA.Mods.Common.Traits
 		public readonly int WaitDuration = 25;
 
 		[Desc("The pathfinding cost penalty applied for each harvester waiting to unload at a refinery.")]
-		public readonly int UnloadQueueCostModifier = 12;
+		public readonly int UnloadQueueCostModifier = 300;
 
 		[Desc("The pathfinding cost penalty applied for cells directly away from the refinery.")]
 		public readonly int ResourceRefineryDirectionPenalty = 200;
@@ -181,17 +181,18 @@ namespace OpenRA.Mods.Common.Traits
 			// Start a search from each refinery's delivery location:
 			List<CPos> path;
 
-			using (var search = PathSearch.FromPoints(self.World, mobile.Locomotor, self, refs.Values.Select(r => r.Location), self.Location, BlockedByActor.None)
-				.WithCustomCost(loc =>
-				{
-					if (!refs.ContainsKey(loc))
-						return 0;
+			Func<CPos, int> customCost = loc =>
+			{
+				if (!refs.ContainsKey(loc))
+					return 0;
 
-					var occupancy = refs[loc].Occupancy;
+				var occupancy = refs[loc].Occupancy;
 
-					// Prefer refineries with less occupancy (multiplier is to offset distance cost):
-					return occupancy * Info.UnloadQueueCostModifier;
-				}))
+				// Prefer refineries with less occupancy (multiplier is to offset distance cost):
+				return occupancy * Info.UnloadQueueCostModifier;
+			};
+
+			using (var search = PathSearch.FromPoints(self.World, mobile.Locomotor, self, refs.Values.Select(r => r.Location), self.Location, BlockedByActor.None, customCost))
 				path = self.World.WorldActor.Trait<IPathFinder>().FindPath(search);
 
 			if (path.Count != 0)
