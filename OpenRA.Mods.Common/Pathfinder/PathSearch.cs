@@ -46,9 +46,9 @@ namespace OpenRA.Mods.Common.Pathfinder
 			considered = new LinkedList<Pair<CPos, int>>();
 		}
 
-		public static IGraph<CellInfo> GetClusterPathGraph(World world, Boundaries boundaries, Locomotor locomotor)
+		public static IGraph<CellInfo> GetClusterPathGraph(World world, Component component, Locomotor locomotor)
 		{
-			return new ClusterPathGraph(boundaries, LayerPoolForWorld(world), locomotor, world, false);
+			return new ClusterPathGraph(component, LayerPoolForWorld(world), locomotor, world, false);
 		}
 
 		public static IPathSearch Search(World world, Locomotor locomotor, Actor self, BlockedByActor check, Func<CPos, bool> goalCondition)
@@ -62,29 +62,11 @@ namespace OpenRA.Mods.Common.Pathfinder
 
 		public static IPathSearch FromPoint(World world, Locomotor locomotor, Actor self, CPos @from, CPos target, BlockedByActor check)
 		{
-			var graph = new PathGraph(LayerPoolForWorld(world), locomotor, self, world, check);
+			var layerPoolForWorld = LayerPoolForWorld(world);
+			var graph = new PathGraph(layerPoolForWorld, locomotor, self, world, check);
 			var search = new PathSearch(graph)
 			{
-				heuristic = DefaultEstimator(target)
-			};
-
-			search.isGoal = loc =>
-			{
-				var locInfo = search.Graph[loc];
-				return locInfo.EstimatedTotal - locInfo.CostSoFar == 0;
-			};
-
-			if (world.Map.Contains(from))
-				search.AddInitialCell(from);
-
-			return search;
-		}
-
-		public static IPathSearch FromPointHpa(ExtendedGraph graph, World world, Locomotor locomotor, Actor self, CPos @from, CPos target, bool checkForBlocked)
-		{
-			var search = new PathSearch(graph)
-			{
-				heuristic = DefaultEstimator(target)
+				heuristic1 = new HierarchicalHeuristic(world, layerPoolForWorld, locomotor.ClustersManager, from, target)
 			};
 
 			search.isGoal = loc =>
@@ -121,7 +103,7 @@ namespace OpenRA.Mods.Common.Pathfinder
 
 		protected override void AddInitialCell(CPos location)
 		{
-			var cost = heuristic(location);
+			var cost = heuristic1.Heuristic(location);
 			Graph[location] = new CellInfo(0, cost, location, CellStatus.Open);
 			var connection = new GraphConnection(location, cost);
 			OpenQueue.Add(connection);
@@ -165,7 +147,7 @@ namespace OpenRA.Mods.Common.Pathfinder
 				if (neighborCell.Status == CellStatus.Open)
 					hCost = neighborCell.EstimatedTotal - neighborCell.CostSoFar;
 				else
-					hCost = heuristic(neighborCPos);
+					hCost = heuristic1.Heuristic(neighborCPos);
 
 				var estimatedCost = gCost + hCost;
 				Graph[neighborCPos] = new CellInfo(gCost, estimatedCost, currentMinNode, CellStatus.Open);
@@ -184,5 +166,202 @@ namespace OpenRA.Mods.Common.Pathfinder
 
 			return currentMinNode;
 		}
+	}
+
+	sealed class AbstractPathSearch
+	{
+		readonly IAbstractGraph graph;
+		IPriorityQueue<GraphConnection> openQueue;
+		CellLayer<CellInfo> cellStatus;
+		readonly DiagonalHeuristic heuristic;
+		CPos target;
+
+		public AbstractPathSearch(CellInfoLayerPool layerPool, IAbstractGraph graph, CPos start, CPos target)
+		{
+			var pooledLayer = layerPool.Get();
+			cellStatus = pooledLayer.GetLayer();
+			this.target = target;
+			this.graph = graph;
+			openQueue = new PriorityQueue<GraphConnection>(GraphConnection.ConnectionCostComparer);
+			openQueue.Add(new GraphConnection(start, 0));
+
+			heuristic = new DiagonalHeuristic(target);
+		}
+
+		public List<CPos> FindPath()
+		{
+			List<CPos> path = null;
+
+			while (CanExpand)
+			{
+				var p = Expand();
+				if (p == target)
+				{
+					path = MakePath(cellStatus, p);
+					break;
+				}
+			}
+
+			if (path != null)
+				return path;
+
+			// no path exists
+			return new List<CPos>();
+		}
+
+		bool CanExpand { get { return !openQueue.Empty; } }
+
+		CPos Expand()
+		{
+			var currentMinNode = openQueue.Pop().Destination;
+
+			var currentCell = cellStatus[currentMinNode];
+			cellStatus[currentMinNode] = new CellInfo(currentCell.CostSoFar, currentCell.EstimatedTotal, currentCell.PreviousPos, CellStatus.Closed);
+
+			foreach (var connection in graph.GetConnections(currentMinNode))
+			{
+				// Calculate the cost up to that point
+				var gCost = currentCell.CostSoFar + connection.Cost;
+
+				var neighborCPos = connection.Destination;
+				var neighborCell = cellStatus[neighborCPos];
+
+				// Cost is even higher; next direction:
+				if (neighborCell.Status == CellStatus.Closed || gCost >= neighborCell.CostSoFar)
+					continue;
+
+				// Now we may seriously consider this direction using heuristics. If the cell has
+				// already been processed, we can reuse the result (just the difference between the
+				// estimated total and the cost so far
+				int hCost;
+				if (neighborCell.Status == CellStatus.Open)
+					hCost = neighborCell.EstimatedTotal - neighborCell.CostSoFar;
+				else
+					hCost = heuristic.Heuristic(neighborCPos);
+
+				var estimatedCost = gCost + hCost;
+				cellStatus[neighborCPos] = new CellInfo(gCost, estimatedCost, currentMinNode, CellStatus.Open);
+
+				if (neighborCell.Status != CellStatus.Open)
+					openQueue.Add(new GraphConnection(neighborCPos, estimatedCost));
+			}
+
+			return currentMinNode;
+		}
+
+		static List<CPos> MakePath(CellLayer<CellInfo> cellInfo, CPos destination)
+		{
+			var ret = new List<CPos>();
+			var currentNode = destination;
+
+			while (cellInfo[currentNode].PreviousPos != currentNode)
+			{
+				ret.Add(currentNode);
+				currentNode = cellInfo[currentNode].PreviousPos;
+			}
+
+			ret.Add(currentNode);
+			return ret;
+		}
+	}
+
+	public class DiagonalHeuristic : IHeuristic
+	{
+		readonly CPos destination;
+
+		public DiagonalHeuristic(CPos destination)
+		{
+			this.destination = destination;
+		}
+
+		public int Heuristic(CPos here)
+		{
+			var diag = Math.Min(Math.Abs(here.X - destination.X), Math.Abs(here.Y - destination.Y));
+			var straight = Math.Abs(here.X - destination.X) + Math.Abs(here.Y - destination.Y);
+
+			// According to the information link, this is the shape of the function.
+			// We just extract factors to simplify.
+			// Possible simplification: var h = Constants.CellCost * (straight + (Constants.Sqrt2 - 2) * diag);
+			return Constants.CellCost * straight + (Constants.DiagonalCellCost - 2 * Constants.CellCost) * diag;
+		}
+	}
+
+	public interface IHeuristic
+	{
+		int Heuristic(CPos here);
+	}
+
+	class HierarchicalHeuristic : IHeuristic
+	{
+		ClustersManager manager;
+		ExtendedGraph graph;
+		Component startComponent;
+		Component targetComponent;
+		DiagonalHeuristic heuristic;
+
+		List<AbstractPath> abstractPath = new List<AbstractPath>();
+
+		public HierarchicalHeuristic(World world, CellInfoLayerPool layerPool, ClustersManager clustersManager, CPos start, CPos target)
+		{
+			manager = clustersManager;
+			graph = new ExtendedGraph(clustersManager.Graph);
+
+			startComponent = AddNodes(start);
+			targetComponent = AddNodes(target);
+
+			var search = new AbstractPathSearch(layerPool, graph, start, target);
+			var path = search.FindPath();
+
+			var clusterOverlay = world.WorldActor.Trait<ClusterOverlay>();
+
+			heuristic = new DiagonalHeuristic(target);
+
+			clusterOverlay.AddPath(path);
+		}
+
+		Component AddNodes(CPos cell)
+		{
+			var component = manager.GetComponent(cell);
+			graph.AddNode(cell, component.Entrances);
+			return component;
+		}
+
+		public int Heuristic(CPos here)
+		{
+			var currentComponent = manager.GetComponent(here);
+
+			// base case - we are in the target component
+			if (currentComponent == targetComponent)
+				return heuristic.Heuristic(here);
+
+			var currentStep = GetStep(currentComponent.Id);
+
+			if (currentStep == null)
+				return int.MaxValue;
+
+			var diagonalHeuristic = new DiagonalHeuristic(currentStep.Exit);
+
+			return diagonalHeuristic.Heuristic(here) + currentStep.CostToTarget;
+
+			return 10;
+		}
+
+		AbstractPath GetStep(int componentId)
+		{
+			foreach (var path in abstractPath)
+			{
+				if (path.ComponentId == componentId)
+					return path;
+			}
+
+			return null;
+		}
+	}
+
+	class AbstractPath
+	{
+		public int ComponentId;
+		public CPos Exit;
+		public int CostToTarget;
 	}
 }

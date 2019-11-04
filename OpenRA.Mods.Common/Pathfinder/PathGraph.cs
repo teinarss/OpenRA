@@ -244,9 +244,7 @@ namespace OpenRA.Mods.Common.Pathfinder
 		public bool InReverse { get; set; }
 		public Actor IgnoreActor { get; set; }
 
-		readonly Boundaries boundaries;
 		readonly Locomotor locomotor;
-		readonly LocomotorInfo.WorldMovementInfo worldMovementInfo;
 		CellInfoLayerPool.PooledCellInfoLayer pooledLayer;
 		readonly bool checkTerrainHeight;
 		CellLayer<CellInfo> groundInfo;
@@ -254,17 +252,15 @@ namespace OpenRA.Mods.Common.Pathfinder
 		readonly Dictionary<byte, Pair<ICustomMovementLayer, CellLayer<CellInfo>>> customLayerInfo =
 			new Dictionary<byte, Pair<ICustomMovementLayer, CellLayer<CellInfo>>>();
 
-		public ClusterPathGraph(Boundaries boundaries, CellInfoLayerPool layerPool, Locomotor locomotor, World world, bool checkForBlocked)
+		public ClusterPathGraph(Component component, CellInfoLayerPool layerPool, Locomotor locomotor, World world, bool checkForBlocked)
 		{
+			this.component = component;
 			cellInfoLayerPool = layerPool;
 			pooledLayer = layerPool.Get();
 			groundInfo = pooledLayer.GetLayer();
-			var locomotorInfo = locomotor.Info;
-			this.boundaries = boundaries;
 			this.locomotor = locomotor;
 
 			World = world;
-			worldMovementInfo = locomotorInfo.GetWorldMovementInfo(world);
 			LaneBias = 1;
 			checkTerrainHeight = world.Map.Grid.MaximumTerrainHeight > 0;
 		}
@@ -287,6 +283,7 @@ namespace OpenRA.Mods.Common.Pathfinder
 			new[] { new CVec(1, -1), new CVec(1, 0), new CVec(-1, 1), new CVec(0, 1), new CVec(1, 1) },
 		};
 
+		readonly Component component;
 		CellInfoLayerPool cellInfoLayerPool;
 
 		public List<GraphConnection> GetConnections(CPos position)
@@ -304,7 +301,7 @@ namespace OpenRA.Mods.Common.Pathfinder
 			{
 				var neighbor = position + directions[i];
 
-				if (!boundaries.Contains(neighbor))
+				if (!component.Contains(neighbor))
 					continue;
 
 				var movementCost = GetCostToNode(neighbor, directions[i]);
@@ -383,16 +380,14 @@ namespace OpenRA.Mods.Common.Pathfinder
 		}
 	}
 
-	public class ExtendedGraph : IGraph<CellInfo>
+	public class ExtendedGraph : IAbstractGraph
 	{
-		readonly IGraph<CellInfo> originalGraph;
+		readonly IAbstractGraph originalGraph;
 
 		Dictionary<CPos, LinkedList<Edge>> edges = new Dictionary<CPos, LinkedList<Edge>>();
-		CellLayer<CellInfo> infos;
 
-		public ExtendedGraph(Map map, IGraph<CellInfo> originalGraph)
+		public ExtendedGraph(IAbstractGraph originalGraph)
 		{
-			infos = new CellLayer<CellInfo>(map);
 			this.originalGraph = originalGraph;
 		}
 
@@ -401,12 +396,18 @@ namespace OpenRA.Mods.Common.Pathfinder
 			edges.GetOrAdd(cell).AddLast(new Edge(to, edgeType, cost, pathPath));
 		}
 
-		public void Dispose()
+		public void AddNode(CPos cell, IEnumerable<CPos> neighbors)
 		{
-			throw new NotImplementedException();
+			var e = edges.GetOrAdd(cell);
+			var heuristic = new DiagonalHeuristic(cell);
+			foreach (var neighbor in neighbors)
+			{
+				var cost = heuristic.Heuristic(neighbor);
+				e.AddLast(new Edge(neighbor, EdgeType.Intra, cost, null));
+			}
 		}
 
-		public List<GraphConnection> GetConnections(CPos cell)
+		public IEnumerable<GraphConnection> GetConnections(CPos cell)
 		{
 			LinkedList<Edge> adj;
 
@@ -439,24 +440,6 @@ namespace OpenRA.Mods.Common.Pathfinder
 
 				return validNeighbors;
 			}
-		}
-
-		public CellInfo this[CPos pos]
-		{
-			get { return infos[pos]; }
-			set { infos[pos] = value; }
-		}
-
-		public Func<CPos, bool> CustomBlock { get; set; }
-		public Func<CPos, int> CustomCost { get; set; }
-		public int LaneBias { get; set; }
-		public bool InReverse { get; set; }
-		public Actor IgnoreActor { get; set; }
-		public World World { get; private set; }
-		public Actor Actor { get; private set; }
-		public void Reset()
-		{
-			throw new NotImplementedException();
 		}
 	}
 }

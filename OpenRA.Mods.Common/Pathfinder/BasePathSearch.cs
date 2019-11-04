@@ -73,6 +73,7 @@ namespace OpenRA.Mods.Common.Pathfinder
 		public bool Debug { get; set; }
 		protected Func<CPos, int> heuristic;
 		protected Func<CPos, bool> isGoal;
+		protected IHeuristic heuristic1;
 
 		// This member is used to compute the ID of PathSearch.
 		// Essentially, it represents a collection of the initial
@@ -96,16 +97,8 @@ namespace OpenRA.Mods.Common.Pathfinder
 		/// <returns>A delegate that calculates the estimation for a node</returns>
 		protected static Func<CPos, int> DefaultEstimator(CPos destination)
 		{
-			return here =>
-			{
-				var diag = Math.Min(Math.Abs(here.X - destination.X), Math.Abs(here.Y - destination.Y));
-				var straight = Math.Abs(here.X - destination.X) + Math.Abs(here.Y - destination.Y);
-
-				// According to the information link, this is the shape of the function.
-				// We just extract factors to simplify.
-				// Possible simplification: var h = Constants.CellCost * (straight + (Constants.Sqrt2 - 2) * diag);
-				return Constants.CellCost * straight + (Constants.DiagonalCellCost - 2 * Constants.CellCost) * diag;
-			};
+			var diagonal = new DiagonalHeuristic(destination);
+			return here => { return diagonal.Heuristic(here); };
 		}
 
 		public IPathSearch Reverse()

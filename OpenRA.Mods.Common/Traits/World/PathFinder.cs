@@ -101,8 +101,6 @@ namespace OpenRA.Mods.Common.Traits
 
 			return pb;
 		}
-        */
-
 		void Ouuou(ExtendedGraph extendedGraph, Locomotor locomotor, CPos cell)
 		{
 			var sourceCluster = locomotor.ClustersManager.GetCluster(cell);
@@ -114,6 +112,8 @@ namespace OpenRA.Mods.Common.Traits
 			foreach (var intraClusterPath in intraClusterPaths)
 				extendedGraph.AddEdge(cell, intraClusterPath.Target, EdgeType.Intra, intraClusterPath.Cost, intraClusterPath.Path);
 		}
+
+	 */
 
 		public List<CPos> FindUnitPath(CPos source, CPos target, Actor self, Actor ignoreActor, BlockedByActor check)
 		{

@@ -67,6 +67,7 @@ namespace OpenRA.Mods.Common.Traits
 		}
 
 		Color[] componentColors = new Color[] { Color.FromArgb(128, 255, 0, 0), Color.FromArgb(128, 0, 255, 0), Color.FromArgb(128, 0, 0, 255) };
+		List<CPos> path;
 
 		void IRenderAboveWorld.RenderAboveWorld(Actor self, WorldRenderer wr)
 		{
@@ -94,6 +95,7 @@ namespace OpenRA.Mods.Common.Traits
 			{
 				foreach (var component in cluster.Components)
 				{
+					/*
 					foreach (var cell in component.Cells)
 					{
 						var tile = map.Tiles[cell];
@@ -116,6 +118,7 @@ namespace OpenRA.Mods.Common.Traits
 
 						wcr.FillRect(tl1, tr1, br1, bl1, componentColors[componentColor]);
 					}
+					*/
 
 					componentColor++;
 
@@ -134,27 +137,43 @@ namespace OpenRA.Mods.Common.Traits
 				wcr.DrawLine(br, bl, width, color, color);
 				wcr.DrawLine(bl, tl, width, color, color);
 
-				foreach (var node in cluster.Nodes)
+				foreach (var id in cluster.Components)
 				{
-					var pos = map.CenterOfCell(node);
-					var wpos = wr.Screen3DPxPosition(pos);
+					var component = locomotorClustersManager.GetComponent(id);
 
-					DrawNode(wr, Color.Orange, wpos);
-
-					var edges = locomotorClustersManager.Graph.Edges(node);
-
-					foreach (var edge in edges)
+					foreach (var node in component.Entrances)
 					{
-						var tuple1 = Tuple.Create(node, edge.To);
-						var tuple2 = Tuple.Create(edge.To, node);
+						var pos = map.CenterOfCell(node);
+						var wpos = wr.Screen3DPxPosition(pos);
 
-						if (edgeDrawn.Contains(tuple1))
-							continue;
+						DrawNode(wr, Color.Orange, wpos);
 
-						RenderEdge(wr, map, edge, node);
+						var edges = locomotorClustersManager.Graph.Edges(node);
 
-						edgeDrawn.Add(tuple1);
-						edgeDrawn.Add(tuple2);
+						foreach (var edge in edges)
+						{
+							var tuple1 = Tuple.Create(node, edge.To);
+							var tuple2 = Tuple.Create(edge.To, node);
+
+							if (edgeDrawn.Contains(tuple1))
+								continue;
+
+							RenderEdge(wr, map, edge, node);
+
+							edgeDrawn.Add(tuple1);
+							edgeDrawn.Add(tuple2);
+						}
+					}
+				}
+
+				if (path != null && path.Count > 0)
+				{
+					var iz = 1 / wr.Viewport.Zoom;
+					var a = GetScreenPos(wr, path.First(), map);
+					foreach (var b in path.Skip(1).Select(pos => GetScreenPos(wr, pos, map)))
+					{
+						Game.Renderer.WorldRgbaColorRenderer.DrawLine(a, b, iz, Color.Red);
+						a = b;
 					}
 				}
 			}
@@ -222,6 +241,11 @@ namespace OpenRA.Mods.Common.Traits
 			var tl = wr.Screen3DPxPosition(topLeftWPos + corner);
 
 			return tl;
+		}
+
+		public void AddPath(List<CPos> path)
+		{
+			this.path = path;
 		}
 	}
 }

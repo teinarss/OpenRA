@@ -1,10 +1,9 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using OpenRA.Mods.Common.Traits;
 using OpenRA.Primitives;
-using OpenRA.Server;
-using OpenRA.Traits;
 
 namespace OpenRA.Mods.Common.Pathfinder
 {
@@ -32,10 +31,9 @@ namespace OpenRA.Mods.Common.Pathfinder
 	public class Cluster
 	{
 		public Boundaries Boundaries { get; private set; }
-		public List<Component> Components { get; private set; }
-		public LinkedList<CPos> Nodes = new LinkedList<CPos>();
+		public List<int> Components { get; private set; }
 
-		public Cluster(Boundaries boundaries, List<Component> components)
+		public Cluster(Boundaries boundaries, List<int> components)
 		{
 			Boundaries = boundaries;
 			Components = components;
@@ -44,11 +42,6 @@ namespace OpenRA.Mods.Common.Pathfinder
 		public bool Contains(CPos cell)
 		{
 			return true;
-		}
-
-		public void AddNode(CPos cell)
-		{
-			Nodes.AddLast(cell);
 		}
 	}
 
@@ -78,13 +71,17 @@ namespace OpenRA.Mods.Common.Pathfinder
 	{
 		readonly int clustersW;
 		readonly int clusterSize;
-		public HGraph Graph { get; private set; }
+		readonly CellLayer<int> componentIds;
+		readonly List<Component> components;
+		public AbstractGraph Graph { get; private set; }
 		public List<Cluster> Clusters;
 
-		public ClustersManager(HGraph graph, int clustersW, int clusterSize)
+		public ClustersManager(AbstractGraph graph, int clustersW, int clusterSize, CellLayer<int> componentIds, List<Component> components)
 		{
 			this.clustersW = clustersW;
 			this.clusterSize = clusterSize;
+			this.componentIds = componentIds;
+			this.components = components;
 			Graph = graph;
 		}
 
@@ -98,6 +95,18 @@ namespace OpenRA.Mods.Common.Pathfinder
 			var x = cell.X / clusterSize;
 			var y = cell.Y / clusterSize;
 			return Clusters[y * clustersW + x];
+		}
+
+		public Component GetComponent(CPos cell)
+		{
+			var id = componentIds[cell];
+
+			return components[id - 1];
+		}
+
+		public Component GetComponent(int id)
+		{
+			return components[id - 1];
 		}
 	}
 
@@ -113,16 +122,17 @@ namespace OpenRA.Mods.Common.Pathfinder
 
 		public List<Cluster>[] Clusters;
 		readonly Dictionary<Tuple<CPos, CPos>, bool> distanceCalculated = new Dictionary<Tuple<CPos, CPos>, bool>();
-		HGraph graph;
+		AbstractGraph graph;
 
-		readonly CellLayer<int> components;
+		readonly CellLayer<int> componentIds;
+		List<Component> components = new List<Component>();
 		int componentId = 1;
 
 		public ClusterBuilder(World world, Locomotor locomotor, int maxLevel)
 		{
 			map = world.Map;
-			components = new CellLayer<int>(map);
-			graph = new HGraph(map);
+			componentIds = new CellLayer<int>(map);
+			graph = new AbstractGraph(map);
 			this.world = world;
 			this.locomotor = locomotor;
 			this.maxLevel = maxLevel;
@@ -137,7 +147,7 @@ namespace OpenRA.Mods.Common.Pathfinder
 			if (width % ClusterSize > 0)
 				clustersW++;
 
-			var clusters = new ClustersManager(graph, clustersW, ClusterSize);
+			var clusters = new ClustersManager(graph, clustersW, ClusterSize, componentIds, components);
 			var clusterSize = ClusterSize;
 			for (int level = 0; level < maxLevel; level++)
 			{
@@ -205,21 +215,24 @@ namespace OpenRA.Mods.Common.Pathfinder
 			return clusters;
 		}
 
-		List<Component> CreateComponents(Boundaries boundaries)
+		List<int> CreateComponents(Boundaries boundaries)
 		{
-			var components = new List<Component>();
-
-			for (var x = boundaries.Left; x < boundaries.Right; x++)
+			var ids = new List<int>();
+			for (var x = boundaries.Left; x <= boundaries.Right; x++)
 			{
-				for (var y = boundaries.Top; y < boundaries.Bottom; y++)
+				for (var y = boundaries.Top; y <= boundaries.Bottom; y++)
 				{
 					var pos = new CPos(x, y);
-					if (this.components[pos] == 0 && locomotor.CanEnterCell(pos))
-						components.Add(Floodfill(x, y, boundaries));
+					if (componentIds[pos] == 0 && locomotor.CanEnterCell(pos))
+					{
+						var component = Floodfill(x, y, boundaries);
+						ids.Add(component.Id);
+						components.Add(component);
+					}
 				}
 			}
 
-			return components;
+			return ids;
 		}
 
 		Component Floodfill(int x, int y, Boundaries boundaries)
@@ -234,12 +247,11 @@ namespace OpenRA.Mods.Common.Pathfinder
 			{
                 start
 			};
+			componentIds[start] = id;
 
 			while (queue.Count > 0)
 			{
 				var position = queue.Dequeue();
-
-				components[position] = id;
 
 				for (var i = 0; i < directions.Length; i++)
 				{
@@ -249,45 +261,50 @@ namespace OpenRA.Mods.Common.Pathfinder
 					{
                         cells.Add(neighbor);
                         queue.Enqueue(neighbor);
+                        componentIds[neighbor] = id;
 					}
 				}
 			}
 
-			var component = new Component(cells);
+			var component = new Component(id, cells);
 
 			return component;
 		}
 
 		void CreateIntraEdges(Cluster cluster)
 		{
-			var clusterPathGraph = PathSearch.GetClusterPathGraph(world, cluster.Boundaries, locomotor);
-			var dijkstra = new Dijkstra(clusterPathGraph);
-
-			foreach (var node in cluster.Nodes)
+			foreach (var componentId in cluster.Components)
 			{
-				var paths = dijkstra.Search(node, cluster.Nodes);
+				var component = GetComponent(componentId);
+				var clusterPathGraph = PathSearch.GetClusterPathGraph(world, component, locomotor);
+				var dijkstra = new Dijkstra(clusterPathGraph);
 
-				foreach (var path in paths)
+				foreach (var node in component.Entrances)
 				{
-					var tuple = Tuple.Create(node, path.Target);
-					var invtuple = Tuple.Create(path.Target, node);
+					var paths = dijkstra.Search(node, component.Entrances);
 
-					if (distanceCalculated.ContainsKey(tuple))
-						continue;
+					foreach (var path in paths)
+					{
+						var tuple = Tuple.Create(node, path.Target);
+						var invtuple = Tuple.Create(path.Target, node);
 
-					// var edge2 = new Edge(toEntrancePoint, node1, EdgeType.Intra, path.Cost, path.Path);
-					graph.AddEdge(path.Target, node, EdgeType.Intra, path.Cost, path.Path);
+						if (distanceCalculated.ContainsKey(tuple))
+							continue;
 
-					var reversePath = new List<CPos>(path.Path);
-					reversePath.Reverse();
+						// var edge2 = new Edge(toEntrancePoint, node1, EdgeType.Intra, path.Cost, path.Path);
+						graph.AddEdge(path.Target, node, EdgeType.Intra, path.Cost, path.Path);
 
-					graph.AddEdge(node, path.Target, EdgeType.Intra, path.Cost, reversePath);
+						var reversePath = new List<CPos>(path.Path);
+						reversePath.Reverse();
 
-					distanceCalculated[tuple] = distanceCalculated[invtuple] = true;
+						graph.AddEdge(node, path.Target, EdgeType.Intra, path.Cost, reversePath);
+
+						distanceCalculated[tuple] = distanceCalculated[invtuple] = true;
+					}
+
+					dijkstra.Reset();
+					clusterPathGraph.Dispose();
 				}
-
-				dijkstra.Reset();
-				clusterPathGraph.Dispose();
 			}
 		}
 
@@ -313,47 +330,32 @@ namespace OpenRA.Mods.Common.Pathfinder
 
 			if (clusterAbove != null)
 			{
-				CreateEntrancesOnTop(
-										left,
-										cluster.Boundaries.Right,
-										top,
-										clusterAbove,
-										cluster);
+				CreateEntrancesOnTop(left, cluster.Boundaries.Right, top);
 			}
 
 			if (clusterOnLeft != null)
 			{
-				CreateEntrancesOnLeft(
-					top,
-					cluster.Boundaries.Bottom,
-					left,
-					clusterOnLeft,
-					cluster);
+				CreateEntrancesOnLeft(top, cluster.Boundaries.Bottom, left);
 			}
 		}
 
-		void CreateEntrancesOnTop(int colStart, int colEnd, int row, Cluster clusterOnTop, Cluster cluster)
+		void CreateEntrancesOnTop(int colStart, int colEnd, int row)
 		{
 			Func<int, Tuple<CPos, CPos>> getNodesForColumn =
 				column => Tuple.Create(GetNode(column, row - 1), GetNode(column, row));
 
-			CreateEntrancesAlongEdge(colStart, colEnd, clusterOnTop, cluster, getNodesForColumn);
+			CreateEntrancesAlongEdge(colStart, colEnd, getNodesForColumn);
 		}
 
-		void CreateEntrancesOnLeft(int rowStart, int rowEnd, int column, Cluster clusterOnLeft, Cluster cluster)
+		void CreateEntrancesOnLeft(int rowStart, int rowEnd, int column)
 		{
 			Func<int, Tuple<CPos, CPos>> getNodesForRow =
 				row => Tuple.Create(GetNode(column - 1, row), GetNode(column, row));
 
-			CreateEntrancesAlongEdge(rowStart, rowEnd, clusterOnLeft, cluster, getNodesForRow);
+			CreateEntrancesAlongEdge(rowStart, rowEnd, getNodesForRow);
 		}
 
-		void CreateEntrancesAlongEdge(
-			int startPoint,
-			int endPoint,
-			Cluster precedentCluster,
-			Cluster currentCluster,
-			Func<int, Tuple<CPos, CPos>> getNodesInEdge)
+		void CreateEntrancesAlongEdge(int startPoint, int endPoint, Func<int, Tuple<CPos, CPos>> getNodesInEdge)
 		{
 			for (var entranceStart = startPoint; entranceStart <= endPoint; entranceStart++)
 			{
@@ -369,18 +371,22 @@ namespace OpenRA.Mods.Common.Pathfinder
 					var srcNode = nodes.Item1;
 					var destNode = nodes.Item2;
 
+					var c1 = GetComponent(srcNode);
+					c1.AddNode(srcNode);
+					var c2 = GetComponent(destNode);
+					c2.AddNode(destNode);
+
 					graph.AddEdge(srcNode, destNode, EdgeType.Inter);
 					graph.AddEdge(destNode, srcNode, EdgeType.Inter);
-
-					precedentCluster.AddNode(srcNode);
-					currentCluster.AddNode(destNode);
 
 					nodes = getNodesInEdge(entranceEnd);
 					srcNode = nodes.Item1;
 					destNode = nodes.Item2;
 
-					precedentCluster.AddNode(srcNode);
-					currentCluster.AddNode(destNode);
+					c1 = GetComponent(srcNode);
+					c1.AddNode(srcNode);
+					c2 = GetComponent(destNode);
+					c2.AddNode(destNode);
 
 					graph.AddEdge(srcNode, destNode, EdgeType.Inter);
 					graph.AddEdge(destNode, srcNode, EdgeType.Inter);
@@ -394,8 +400,10 @@ namespace OpenRA.Mods.Common.Pathfinder
 					graph.AddEdge(srcNode, destNode, EdgeType.Inter);
 					graph.AddEdge(destNode, srcNode, EdgeType.Inter);
 
-					precedentCluster.AddNode(srcNode);
-					currentCluster.AddNode(destNode);
+					var c1 = GetComponent(srcNode);
+					c1.AddNode(srcNode);
+					var c2 = GetComponent(destNode);
+					c2.AddNode(destNode);
 				}
 
 				entranceStart = entranceEnd;
@@ -415,32 +423,61 @@ namespace OpenRA.Mods.Common.Pathfinder
 		{
 			var nodes = getNodesInEdge(entrancePoint);
 
-			return locomotor.CanEnterCell(nodes.Item1) &&
-				   locomotor.CanEnterCell(nodes.Item2);
+			return locomotor.CanEnterCell(nodes.Item1) && locomotor.CanEnterCell(nodes.Item2);
 		}
 
 		CPos GetNode(int left, int top)
 		{
 			return new CPos(left, top);
 		}
+
+		Component GetComponent(CPos cell)
+		{
+			var id = componentIds[cell];
+
+			return components[id - 1];
+		}
+
+		Component GetComponent(int id)
+		{
+			return components[id - 1];
+		}
 	}
 
 	public class Component
 	{
+		public int Id { get; private set; }
 		public HashSet<CPos> Cells { get; private set; }
+		public List<CPos> Entrances = new List<CPos>();
 
-		public Component(HashSet<CPos> cells)
+		public Component(int id, HashSet<CPos> cells)
 		{
+			Id = id;
 			Cells = cells;
+		}
+
+		public void AddNode(CPos cell)
+		{
+			Entrances.Add(cell);
+		}
+
+		public bool Contains(CPos cell)
+		{
+			return Cells.Contains(cell);
 		}
 	}
 
-	public class HGraph : IGraph<CellInfo>
+	public interface IAbstractGraph
+	{
+		IEnumerable<GraphConnection> GetConnections(CPos currentMinNode);
+	}
+
+	public class AbstractGraph : IAbstractGraph
 	{
 		CellLayer<CellInfo> infos;
 		Dictionary<CPos, LinkedList<Edge>> edges = new Dictionary<CPos, LinkedList<Edge>>();
 
-		public HGraph(Map map)
+		public AbstractGraph(Map map)
 		{
 			infos = new CellLayer<CellInfo>(map);
 		}
@@ -460,11 +497,7 @@ namespace OpenRA.Mods.Common.Pathfinder
 			return edges[from].SingleOrDefault(e => e.To == to);
 		}
 
-		public void Dispose()
-		{
-		}
-
-		public List<GraphConnection> GetConnections(CPos position)
+		public IEnumerable<GraphConnection> GetConnections(CPos position)
 		{
 			var list = edges[position];
 			var result = new List<GraphConnection>();
@@ -479,14 +512,6 @@ namespace OpenRA.Mods.Common.Pathfinder
 			get { return infos[pos]; }
 			set { infos[pos] = value; }
 		}
-
-		public Func<CPos, bool> CustomBlock { get; set; }
-		public Func<CPos, int> CustomCost { get; set; }
-		public int LaneBias { get; set; }
-		public bool InReverse { get; set; }
-		public Actor IgnoreActor { get; set; }
-		public World World { get; private set; }
-		public Actor Actor { get; private set; }
 	}
 
 	public class Dijkstra
