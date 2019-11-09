@@ -108,6 +108,11 @@ namespace OpenRA.Mods.Common.Pathfinder
 		{
 			return components[id - 1];
 		}
+
+		public int GetComponentId(CPos cell)
+		{
+			return componentIds[cell];
+		}
 	}
 
 	public class ClusterBuilder

@@ -263,6 +263,7 @@ World:
 	ScriptTriggers:
 	TimeLimitManager:
 	PathfinderDebugOverlay:
+	HpaCommand:
 
 EditorWorld:
 	Inherits: ^BaseWorld

@@ -277,6 +277,9 @@ World:
 			3: WarningThreeMinutesRemaining
 			2: WarningTwoMinutesRemaining
 			1: WarningOneMinuteRemaining
+	PathfinderDebugOverlay:
+	HpaCommand:
+	ClusterOverlay:
 
 EditorWorld:
 	Inherits: ^BaseWorld

@@ -55,6 +55,7 @@ namespace OpenRA.Mods.Common.Traits
 		static readonly List<CPos> EmptyPath = new List<CPos>(0);
 		readonly World world;
 		DomainIndex domainIndex;
+		HpaCommand hpaCommand;
 		bool cached;
 
 		public PathFinder(World world)
@@ -123,6 +124,7 @@ namespace OpenRA.Mods.Common.Traits
 			if (!cached)
 			{
 				domainIndex = world.WorldActor.TraitOrDefault<DomainIndex>();
+				hpaCommand = world.WorldActor.TraitOrDefault<HpaCommand>();
 				cached = true;
 			}
 
@@ -140,8 +142,8 @@ namespace OpenRA.Mods.Common.Traits
 
 			List<CPos> pb;
 
-			using (var fromSrc = PathSearch.FromPoint(world, locomotor, self, target, source, check).WithIgnoredActor(ignoreActor))
-			using (var fromDest = PathSearch.FromPoint(world, locomotor, self, source, target, check).WithIgnoredActor(ignoreActor).Reverse())
+			using (var fromSrc = PathSearch.FromPoint(world, locomotor, self, target, source, check, hpaCommand.Enabled).WithIgnoredActor(ignoreActor))
+			using (var fromDest = PathSearch.FromPoint(world, locomotor, self, source, target, check, hpaCommand.Enabled).WithIgnoredActor(ignoreActor).Reverse())
 				pb = FindBidiPath(fromSrc, fromDest);
 
 			return pb;
@@ -152,6 +154,7 @@ namespace OpenRA.Mods.Common.Traits
 			if (!cached)
 			{
 				domainIndex = world.WorldActor.TraitOrDefault<DomainIndex>();
+				hpaCommand = world.WorldActor.TraitOrDefault<HpaCommand>();
 				cached = true;
 			}
 
@@ -181,7 +184,7 @@ namespace OpenRA.Mods.Common.Traits
 			var locomotor = mobile.Locomotor;
 
 			using (var fromSrc = PathSearch.FromPoints(world, locomotor, self, tilesInRange, source, check))
-			using (var fromDest = PathSearch.FromPoint(world, locomotor, self, source, targetCell, check).Reverse())
+			using (var fromDest = PathSearch.FromPoint(world, locomotor, self, source, targetCell, check, hpaCommand.Enabled).Reverse())
 				return FindBidiPath(fromSrc, fromDest);
 		}
 
@@ -215,7 +218,7 @@ namespace OpenRA.Mods.Common.Traits
 			List<CPos> path = null;
 
 			var dbg = world.WorldActor.TraitOrDefault<PathfinderDebugOverlay>();
-			if (dbg != null && dbg.Visible)
+			if (dbg != null && dbg.Enabled)
 			{
 				fromSrc.Debug = true;
 				fromDest.Debug = true;
@@ -242,11 +245,11 @@ namespace OpenRA.Mods.Common.Traits
 				}
 			}
 
-			if (dbg != null && dbg.Visible)
+			if (dbg != null && dbg.Enabled)
 			{
 				dbg.Clear(fromSrc.Graph.Actor);
 				dbg.AddLayer(fromSrc.Graph.Actor, fromSrc.Considered, fromSrc.MaxCost, fromSrc.Owner);
-				dbg.AddLayer(fromSrc.Graph.Actor, fromDest.Considered, fromDest.MaxCost, fromDest.Owner);
+				dbg.AddLayer(fromDest.Graph.Actor, fromDest.Considered, fromDest.MaxCost, fromDest.Owner);
 			}
 
 			fromSrc.Graph.Dispose();

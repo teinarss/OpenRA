@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Linq;
 using OpenRA.Graphics;
+using OpenRA.Mods.Common.Commands;
 using OpenRA.Mods.Common.Graphics;
 using OpenRA.Primitives;
 using OpenRA.Traits;
@@ -13,12 +13,16 @@ namespace OpenRA.Mods.Common.Traits
 	[Desc("Required for the A* PathDebug from DeveloperMode. Attach this to the world actor.")]
 	public class PathfinderDebugOverlayInfo : TraitInfo<PathfinderDebugOverlay> { }
 
-	public class PathfinderDebugOverlay : IRenderAboveShroud, IWorldLoaded
+	public class PathfinderDebugOverlay : IRenderAboveShroud, IWorldLoaded, IChatCommand
 	{
+		const string CommandName = "pathfinderdebug";
+		const string CommandDesc = "toggles the terrain geometry overlay.";
+
 		Dictionary<Actor, CellLayer<int>> layers;
 		int refreshTick;
 		World world;
-		public bool Visible;
+		SpriteFont font;
+		public bool Enabled { get; private set; }
 
 		public void WorldLoaded(World w, WorldRenderer wr)
 		{
@@ -26,8 +30,22 @@ namespace OpenRA.Mods.Common.Traits
 			refreshTick = 0;
 			layers = new Dictionary<Actor, CellLayer<int>>(8);
 
-			// Enabled via Cheats menu
-			Visible = true;
+			var console = w.WorldActor.TraitOrDefault<ChatCommands>();
+			var help = w.WorldActor.TraitOrDefault<HelpCommand>();
+
+			if (console == null || help == null)
+				return;
+
+			console.RegisterCommand(CommandName, this);
+			help.RegisterHelp(CommandName, CommandDesc);
+
+			font = Game.Renderer.Fonts["Tiny"];
+		}
+
+		public void InvokeCommand(string name, string arg)
+		{
+			if (name == CommandName)
+				Enabled ^= true;
 		}
 
 		public void Clear(Actor actor)
@@ -51,7 +69,7 @@ namespace OpenRA.Mods.Common.Traits
 			}
 
 			foreach (var p in cellWeights)
-				layer[p.First] = Math.Min(128, layer[p.First] + (maxWeight - p.Second) * 64 / maxWeight);
+				layer[p.First] = p.Second;
 		}
 
 		/*
@@ -120,7 +138,7 @@ namespace OpenRA.Mods.Common.Traits
 
 		public IEnumerable<IRenderable> RenderAboveShroud(Actor self, WorldRenderer wr)
 		{
-			if (!Visible)
+			if (!Enabled)
 				yield break;
 
 			var map = wr.World.Map;
@@ -159,10 +177,43 @@ namespace OpenRA.Mods.Common.Traits
 					var bottomLeft = pos + corners[3];
 
 					yield return new FillRectAnnotationRenderable(topLeft, topRight, bottomRight, bottomLeft, pos, Color.FromArgb(w, c));
+					yield return new TextRenderable(font, pos, 0, Color.White, layer[uv].ToString());
 				}
 			}
 		}
 
 		public bool SpatiallyPartitionable { get; private set; }
+	}
+
+	[Desc("Required for the A* PathDebug from DeveloperMode. Attach this to the world actor.")]
+	public class HpaCommandInfo : TraitInfo<HpaCommand> { }
+
+	public class HpaCommand : IWorldLoaded, IChatCommand
+	{
+		const string CommandName = "hpa";
+		const string CommandDesc = "toggles the hpa pathfinding.";
+
+		public bool Enabled { get; private set; }
+
+		public void WorldLoaded(World w, WorldRenderer wr)
+		{
+			var console = w.WorldActor.TraitOrDefault<ChatCommands>();
+			var help = w.WorldActor.TraitOrDefault<HelpCommand>();
+
+			if (console == null || help == null)
+				return;
+
+			console.RegisterCommand(CommandName, this);
+			help.RegisterHelp(CommandName, CommandDesc);
+		}
+
+		public void InvokeCommand(string name, string arg)
+		{
+			if (name == CommandName)
+				Enabled ^= true;
+
+			var message = Enabled ? "hpa enabled" : "Hpa disabled";
+			Game.Debug(message);
+		}
 	}
 }

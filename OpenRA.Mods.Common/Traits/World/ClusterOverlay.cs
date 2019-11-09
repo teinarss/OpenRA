@@ -67,7 +67,7 @@ namespace OpenRA.Mods.Common.Traits
 		}
 
 		Color[] componentColors = new Color[] { Color.FromArgb(128, 255, 0, 0), Color.FromArgb(128, 0, 255, 0), Color.FromArgb(128, 0, 0, 255) };
-		List<CPos> path;
+		List<AbstractPath> path;
 
 		void IRenderAboveWorld.RenderAboveWorld(Actor self, WorldRenderer wr)
 		{
@@ -169,8 +169,8 @@ namespace OpenRA.Mods.Common.Traits
 				if (path != null && path.Count > 0)
 				{
 					var iz = 1 / wr.Viewport.Zoom;
-					var a = GetScreenPos(wr, path.First(), map);
-					foreach (var b in path.Skip(1).Select(pos => GetScreenPos(wr, pos, map)))
+					var a = GetScreenPos(wr, path.First().Exit, map);
+					foreach (var b in path.Skip(1).Select(pos => GetScreenPos(wr, pos.Exit, map)))
 					{
 						Game.Renderer.WorldRgbaColorRenderer.DrawLine(a, b, iz, Color.Red);
 						a = b;
@@ -243,7 +243,7 @@ namespace OpenRA.Mods.Common.Traits
 			return tl;
 		}
 
-		public void AddPath(List<CPos> path)
+		public void AddPath(List<AbstractPath> path)
 		{
 			this.path = path;
 		}
