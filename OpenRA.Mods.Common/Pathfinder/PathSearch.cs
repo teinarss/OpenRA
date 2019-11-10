@@ -266,13 +266,25 @@ namespace OpenRA.Mods.Common.Pathfinder
 			var currentNode = destination;
 			var currentCellInfo = cellInfo[currentNode];
 
-			var take = false;
+			AbstractPath currentStep = null;
+
+			var take = true;
+
 			while (cellInfo[currentNode].PreviousPos != currentNode)
 			{
 				if (take)
 				{
 					var component = clustersManager.GetComponent(currentNode);
-					ret.Add(new AbstractPath(component.Id, currentNode, currentCellInfo.CostSoFar));
+					var abstractPath = new AbstractPath(component.Id, currentNode, currentCellInfo.CostSoFar);
+
+					if (currentStep != null)
+					{
+						currentStep.Next = abstractPath;
+					}
+
+					currentStep = abstractPath;
+
+					ret.Add(abstractPath);
 					take = false;
 				}
 				else
@@ -285,7 +297,9 @@ namespace OpenRA.Mods.Common.Pathfinder
 			}
 
 			var componentId = clustersManager.GetComponent(currentNode).Id;
-			ret.Add(new AbstractPath(componentId, currentNode, currentCellInfo.CostSoFar));
+			var item = new AbstractPath(componentId, currentNode, currentCellInfo.CostSoFar);
+			currentStep.Next = item;
+			ret.Add(item);
 			return ret;
 		}
 	}
@@ -344,6 +358,8 @@ namespace OpenRA.Mods.Common.Pathfinder
 				var search = new AbstractPathSearch(layerPool, graph, clustersManager, target, start);
 				abstractPath = search.FindPath();
 
+				currentStep = abstractPath.FirstOrDefault();
+
 				var clusterOverlay = world.WorldActor.Trait<ClusterOverlay>();
 
 				clusterOverlay.AddPath(abstractPath);
@@ -365,13 +381,13 @@ namespace OpenRA.Mods.Common.Pathfinder
 			if (currentComponent == targetComponent)
 				return heuristic.Heuristic(here);
 
-			if (currentComponent != currentStep.ComponentId)
+			if (currentStep == null || currentComponent != currentStep.ComponentId)
 				currentStep = GetStep(currentComponent);
 
 			if (currentStep == null)
 				return 500000;
 
-			var diagonalHeuristic = new DiagonalHeuristic(currentStep.Exit);
+			var diagonalHeuristic = new DiagonalHeuristic(currentStep.Next.Exit);
 
 			return diagonalHeuristic.Heuristic(here) + currentStep.CostToTarget;
 		}
@@ -400,6 +416,7 @@ namespace OpenRA.Mods.Common.Pathfinder
 		public int ComponentId { get; set; }
 		public CPos Exit { get; private set; }
 		public int CostToTarget { get; set; }
+		public AbstractPath Next { get; set; }
 	}
 
 	public class FuncHeuristic : IHeuristic

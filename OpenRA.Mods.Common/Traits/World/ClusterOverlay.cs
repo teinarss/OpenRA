@@ -93,9 +93,21 @@ namespace OpenRA.Mods.Common.Traits
 			var locomotorClustersManager = locomotor.ClustersManager;
 			foreach (var cluster in locomotorClustersManager.Clusters)
 			{
-				foreach (var component in cluster.Components)
+				var boundaries = cluster.Boundaries;
+				var tl = GetSceenPos(wr, boundaries.Left, boundaries.Top, map, topLeftCorner);
+				var tr = GetSceenPos(wr, boundaries.Right, boundaries.Top, map, topRightCorner);
+				var br = GetSceenPos(wr, boundaries.Right, boundaries.Bottom, map, bottomRightCorner);
+				var bl = GetSceenPos(wr, boundaries.Left, boundaries.Bottom, map, bottomLeftCorner);
+
+				wcr.DrawLine(tl, tr, width, color, color);
+				wcr.DrawLine(tr, br, width, color, color);
+				wcr.DrawLine(br, bl, width, color, color);
+				wcr.DrawLine(bl, tl, width, color, color);
+
+				foreach (var id in cluster.Components)
 				{
-					/*
+					var component = locomotorClustersManager.GetComponent(id);
+
 					foreach (var cell in component.Cells)
 					{
 						var tile = map.Tiles[cell];
@@ -118,28 +130,11 @@ namespace OpenRA.Mods.Common.Traits
 
 						wcr.FillRect(tl1, tr1, br1, bl1, componentColors[componentColor]);
 					}
-					*/
 
 					componentColor++;
 
 					if (componentColor >= componentColors.Length)
 						componentColor = 0;
-				}
-
-				var boundaries = cluster.Boundaries;
-				var tl = GetSceenPos(wr, boundaries.Left, boundaries.Top, map, topLeftCorner);
-				var tr = GetSceenPos(wr, boundaries.Right, boundaries.Top, map, topRightCorner);
-				var br = GetSceenPos(wr, boundaries.Right, boundaries.Bottom, map, bottomRightCorner);
-				var bl = GetSceenPos(wr, boundaries.Left, boundaries.Bottom, map, bottomLeftCorner);
-
-				wcr.DrawLine(tl, tr, width, color, color);
-				wcr.DrawLine(tr, br, width, color, color);
-				wcr.DrawLine(br, bl, width, color, color);
-				wcr.DrawLine(bl, tl, width, color, color);
-
-				foreach (var id in cluster.Components)
-				{
-					var component = locomotorClustersManager.GetComponent(id);
 
 					foreach (var node in component.Entrances)
 					{
@@ -168,7 +163,7 @@ namespace OpenRA.Mods.Common.Traits
 
 				if (path != null && path.Count > 0)
 				{
-					var iz = 1 / wr.Viewport.Zoom;
+					var iz = 3 / wr.Viewport.Zoom;
 					var a = GetScreenPos(wr, path.First().Exit, map);
 					foreach (var b in path.Skip(1).Select(pos => GetScreenPos(wr, pos.Exit, map)))
 					{
