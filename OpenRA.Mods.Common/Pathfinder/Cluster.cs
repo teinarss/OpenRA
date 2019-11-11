@@ -47,15 +47,13 @@ namespace OpenRA.Mods.Common.Pathfinder
 
 	public class Edge
 	{
-		public Edge(CPos to, EdgeType edgeType, int cost, List<CPos> path)
+		public Edge(CPos to, int cost, List<CPos> path)
 		{
 			To = to;
-			EdgeType = edgeType;
 			Cost = cost;
 			Path = path;
 		}
 
-		public EdgeType EdgeType { get; set; }
 		public int Cost { get; private set; }
 		public List<CPos> Path { get; private set; }
 		public CPos To { get; set; }
@@ -131,7 +129,7 @@ namespace OpenRA.Mods.Common.Pathfinder
 
 		readonly CellLayer<int> componentIds;
 		List<Component> components = new List<Component>();
-		int componentId = 1;
+		int nextComponentId = 1;
 
 		public ClusterBuilder(World world, Locomotor locomotor, int maxLevel)
 		{
@@ -187,29 +185,16 @@ namespace OpenRA.Mods.Common.Pathfinder
 
 					var boundaries = new Boundaries(top, left, left + width - 1, top + height - 1);
 
-					var components = CreateComponents(boundaries);
+					var clusterComponents = CreateComponents(boundaries);
 
-					var cluster = new Cluster(boundaries, components);
+					var cluster = new Cluster(boundaries, clusterComponents);
 
 					var clusterAbove = top > 0 ? GetCluster(clusters, clusterSize, x, y - 1) : null;
 					var clusterOnLeft = left > 0 ? GetCluster(clusters, clusterSize, x - 1, y) : null;
 
-					if (level == 0)
-					{
-						CreateClusterEntrances(cluster, clusterAbove, clusterOnLeft);
-					}
-					else
-					{
-						foreach (var cluster1 in Clusters[level - 1])
-						{
-						}
-					}
+					CreateClusterEntrances(cluster, clusterAbove, clusterOnLeft);
 
 					clusters.Add(cluster);
-
-					if (level > 0)
-					{
-					}
 				}
 
 			foreach (var cluster in clusters)
@@ -230,7 +215,7 @@ namespace OpenRA.Mods.Common.Pathfinder
 					var pos = new CPos(x, y);
 					if (componentIds[pos] == 0 && locomotor.CanEnterCell(pos))
 					{
-						var component = Floodfill(x, y, boundaries);
+						var component = FloodFill(x, y, boundaries);
 						ids.Add(component.Id);
 						components.Add(component);
 					}
@@ -240,10 +225,10 @@ namespace OpenRA.Mods.Common.Pathfinder
 			return ids;
 		}
 
-		Component Floodfill(int x, int y, Boundaries boundaries)
+		Component FloodFill(int x, int y, Boundaries boundaries)
 		{
 			var queue = new Queue<CPos>();
-			var id = componentId++;
+			var id = nextComponentId++;
 			var start = new CPos(x, y);
 			queue.Enqueue(start);
 			var directions = CVec.Directions;
@@ -271,13 +256,16 @@ namespace OpenRA.Mods.Common.Pathfinder
 				}
 			}
 
-			var component = new Component(id, cells);
+			var location = cells.ToList()[(int)Math.Floor(cells.Count / 2d)];
+
+			var component = new Component(id, cells, location);
 
 			return component;
 		}
 
 		void CreateIntraEdges(Cluster cluster)
 		{
+			/*
 			foreach (var componentId in cluster.Components)
 			{
 				var component = GetComponent(componentId);
@@ -311,6 +299,7 @@ namespace OpenRA.Mods.Common.Pathfinder
 					clusterPathGraph.Dispose();
 				}
 			}
+			*/
 		}
 
 		public Cluster GetCluster(int x, int y)
@@ -330,17 +319,57 @@ namespace OpenRA.Mods.Common.Pathfinder
 
 		void CreateClusterEntrances(Cluster cluster, Cluster clusterAbove, Cluster clusterOnLeft)
 		{
-			var top = cluster.Boundaries.Top;
-			var left = cluster.Boundaries.Left;
-
 			if (clusterAbove != null)
 			{
-				CreateEntrancesOnTop(left, cluster.Boundaries.Right, top);
+				CreateEdges(cluster, clusterAbove);
 			}
 
 			if (clusterOnLeft != null)
 			{
-				CreateEntrancesOnLeft(top, cluster.Boundaries.Bottom, left);
+				CreateEdges(cluster, clusterOnLeft);
+			}
+		}
+
+		void CreateEdges(Cluster cluster, Cluster clusterAbove)
+		{
+			var otherComponents = clusterAbove.Components.Select(i => GetComponent(i)).ToList();
+			var otherNodes = otherComponents.Select(c => c.Location).ToList();
+			var otherCells = otherComponents.SelectMany(c => c.Cells).ToList();
+
+			foreach (var componentId in cluster.Components)
+			{
+				var component = GetComponent(componentId);
+
+				var cells = new HashSet<CPos>();
+				cells.UnionWith(component.Cells);
+				cells.UnionWith(otherCells);
+
+				var clusterPathGraph = PathSearch.GetClusterPathGraph(world, cells, locomotor);
+				var dijkstra = new Dijkstra(clusterPathGraph);
+
+				var paths = dijkstra.Search(component.Location, otherNodes);
+
+				foreach (var path in paths)
+				{
+					var tuple = Tuple.Create(component.Location, path.Target);
+					var invtuple = Tuple.Create(path.Target, component.Location);
+
+					if (distanceCalculated.ContainsKey(tuple))
+						continue;
+
+					// var edge2 = new Edge(toEntrancePoint, node1, EdgeType.Intra, path.Cost, path.Path);
+					graph.AddEdge(path.Target, component.Location, path.Cost, path.Path);
+
+					var reversePath = new List<CPos>(path.Path);
+					reversePath.Reverse();
+
+					graph.AddEdge(component.Location, path.Target, path.Cost, reversePath);
+
+					distanceCalculated[tuple] = distanceCalculated[invtuple] = true;
+				}
+
+				dijkstra.Reset();
+				clusterPathGraph.Dispose();
 			}
 		}
 
@@ -362,6 +391,7 @@ namespace OpenRA.Mods.Common.Pathfinder
 
 		void CreateEntrancesAlongEdge(int startPoint, int endPoint, Func<int, Tuple<CPos, CPos>> getNodesInEdge)
 		{
+			/*
 			for (var entranceStart = startPoint; entranceStart <= endPoint; entranceStart++)
 			{
 				var size = GetEntranceSize(entranceStart, endPoint, getNodesInEdge);
@@ -413,6 +443,7 @@ namespace OpenRA.Mods.Common.Pathfinder
 
 				entranceStart = entranceEnd;
 			}
+			*/
 		}
 
 		int GetEntranceSize(int entranceStart, int end, Func<int, Tuple<CPos, CPos>> getNodesInEdge)
@@ -454,11 +485,13 @@ namespace OpenRA.Mods.Common.Pathfinder
 		public int Id { get; private set; }
 		public HashSet<CPos> Cells { get; private set; }
 		public List<CPos> Entrances = new List<CPos>();
+		public CPos Location { get; private set; }
 
-		public Component(int id, HashSet<CPos> cells)
+		public Component(int id, HashSet<CPos> cells, CPos location)
 		{
 			Id = id;
 			Cells = cells;
+			Location = location;
 		}
 
 		public void AddNode(CPos cell)
@@ -487,14 +520,18 @@ namespace OpenRA.Mods.Common.Pathfinder
 			infos = new CellLayer<CellInfo>(map);
 		}
 
-		public void AddEdge(CPos cell, CPos to, EdgeType edgeType, int cost = 1, List<CPos> pathPath = null)
+		public void AddEdge(CPos cell, CPos to, int cost = 1, List<CPos> pathPath = null)
 		{
-			edges.GetOrAdd(cell).AddLast(new Edge(to, edgeType, cost, pathPath));
+			edges.GetOrAdd(cell).AddLast(new Edge(to, cost, pathPath));
 		}
 
 		public IEnumerable<Edge> Edges(CPos cell)
 		{
-			return edges[cell];
+			LinkedList<Edge> e;
+			if (edges.TryGetValue(cell, out e))
+				return e;
+
+			return Enumerable.Empty<Edge>();
 		}
 
 		public Edge GetEdge(CPos from, CPos to)
@@ -535,7 +572,7 @@ namespace OpenRA.Mods.Common.Pathfinder
 			frontier.Add(new GraphConnection(@from, 0));
 
 			var result = new List<IntraClusterPath>();
-			var counts = targets.Count() - 1;
+			var counts = targets.Count();
 
 			graph[from] = new CellInfo(0, 0, from, CellStatus.Open);
 

@@ -136,28 +136,25 @@ namespace OpenRA.Mods.Common.Traits
 					if (componentColor >= componentColors.Length)
 						componentColor = 0;
 
-					foreach (var node in component.Entrances)
+					var locPos = map.CenterOfCell(component.Location);
+					var wpos = wr.Screen3DPxPosition(locPos);
+
+					DrawNode(wr, Color.Orange, wpos);
+
+					var edges = locomotorClustersManager.Graph.Edges(component.Location);
+
+					foreach (var edge in edges)
 					{
-						var pos = map.CenterOfCell(node);
-						var wpos = wr.Screen3DPxPosition(pos);
+						var tuple1 = Tuple.Create(component.Location, edge.To);
+						var tuple2 = Tuple.Create(edge.To, component.Location);
 
-						DrawNode(wr, Color.Orange, wpos);
+						if (edgeDrawn.Contains(tuple1))
+							continue;
 
-						var edges = locomotorClustersManager.Graph.Edges(node);
+						RenderEdge(wr, map, edge, component.Location);
 
-						foreach (var edge in edges)
-						{
-							var tuple1 = Tuple.Create(node, edge.To);
-							var tuple2 = Tuple.Create(edge.To, node);
-
-							if (edgeDrawn.Contains(tuple1))
-								continue;
-
-							RenderEdge(wr, map, edge, node);
-
-							edgeDrawn.Add(tuple1);
-							edgeDrawn.Add(tuple2);
-						}
+						edgeDrawn.Add(tuple1);
+						edgeDrawn.Add(tuple2);
 					}
 				}
 

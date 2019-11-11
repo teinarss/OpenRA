@@ -46,7 +46,7 @@ namespace OpenRA.Mods.Common.Pathfinder
 			considered = new LinkedList<Pair<CPos, int>>();
 		}
 
-		public static IGraph<CellInfo> GetClusterPathGraph(World world, Component component, Locomotor locomotor)
+		public static IGraph<CellInfo> GetClusterPathGraph(World world, HashSet<CPos> component, Locomotor locomotor)
 		{
 			return new ClusterPathGraph(component, LayerPoolForWorld(world), locomotor, world, false);
 		}
@@ -268,29 +268,19 @@ namespace OpenRA.Mods.Common.Pathfinder
 
 			AbstractPath currentStep = null;
 
-			var take = true;
-
 			while (cellInfo[currentNode].PreviousPos != currentNode)
 			{
-				if (take)
+				var component = clustersManager.GetComponent(currentNode);
+				var abstractPath = new AbstractPath(component.Id, currentNode, currentCellInfo.CostSoFar);
+
+				if (currentStep != null)
 				{
-					var component = clustersManager.GetComponent(currentNode);
-					var abstractPath = new AbstractPath(component.Id, currentNode, currentCellInfo.CostSoFar);
-
-					if (currentStep != null)
-					{
-						currentStep.Next = abstractPath;
-					}
-
-					currentStep = abstractPath;
-
-					ret.Add(abstractPath);
-					take = false;
+					currentStep.Next = abstractPath;
 				}
-				else
-				{
-					take = true;
-				}
+
+				currentStep = abstractPath;
+
+				ret.Add(abstractPath);
 
 				currentNode = cellInfo[currentNode].PreviousPos;
 				currentCellInfo = cellInfo[currentNode];
@@ -334,8 +324,8 @@ namespace OpenRA.Mods.Common.Pathfinder
 	{
 		ClustersManager manager;
 		ExtendedGraph graph;
-		int startComponent;
-		int targetComponent;
+		Component startComponent;
+		Component targetComponent;
 		DiagonalHeuristic heuristic;
 
 		List<AbstractPath> abstractPath = new List<AbstractPath>();
@@ -347,15 +337,15 @@ namespace OpenRA.Mods.Common.Pathfinder
 			manager = clustersManager;
 			graph = new ExtendedGraph(clustersManager.Graph);
 
-			startComponent = AddNodes(start);
-			targetComponent = AddNodes(target);
+			startComponent = manager.GetComponent(start);
+			targetComponent = manager.GetComponent(target);
 
 			heuristic = new DiagonalHeuristic(target);
 
 			if (startComponent != targetComponent)
 			{
 				// reverse search
-				var search = new AbstractPathSearch(layerPool, graph, clustersManager, target, start);
+				var search = new AbstractPathSearch(layerPool, graph, clustersManager, targetComponent.Location, startComponent.Location);
 				abstractPath = search.FindPath();
 
 				currentStep = abstractPath.FirstOrDefault();
@@ -366,19 +356,12 @@ namespace OpenRA.Mods.Common.Pathfinder
 			}
 		}
 
-		int AddNodes(CPos cell)
-		{
-			var component = manager.GetComponent(cell);
-			graph.AddNode(cell, component.Entrances);
-			return component.Id;
-		}
-
 		public int Heuristic(CPos here)
 		{
 			var currentComponent = manager.GetComponentId(here);
 
 			// base case - we are in the target component
-			if (currentComponent == targetComponent)
+			if (currentComponent == targetComponent.Id)
 				return heuristic.Heuristic(here);
 
 			if (currentStep == null || currentComponent != currentStep.ComponentId)

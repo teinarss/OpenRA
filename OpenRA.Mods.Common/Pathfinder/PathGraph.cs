@@ -252,7 +252,10 @@ namespace OpenRA.Mods.Common.Pathfinder
 		readonly Dictionary<byte, Pair<ICustomMovementLayer, CellLayer<CellInfo>>> customLayerInfo =
 			new Dictionary<byte, Pair<ICustomMovementLayer, CellLayer<CellInfo>>>();
 
-		public ClusterPathGraph(Component component, CellInfoLayerPool layerPool, Locomotor locomotor, World world, bool checkForBlocked)
+		readonly HashSet<CPos> component;
+		CellInfoLayerPool cellInfoLayerPool;
+
+		public ClusterPathGraph(HashSet<CPos> component, CellInfoLayerPool layerPool, Locomotor locomotor, World world, bool checkForBlocked)
 		{
 			this.component = component;
 			cellInfoLayerPool = layerPool;
@@ -282,9 +285,6 @@ namespace OpenRA.Mods.Common.Pathfinder
 			new[] { new CVec(-1, 1), new CVec(0, 1), new CVec(1, 1) },
 			new[] { new CVec(1, -1), new CVec(1, 0), new CVec(-1, 1), new CVec(0, 1), new CVec(1, 1) },
 		};
-
-		readonly Component component;
-		CellInfoLayerPool cellInfoLayerPool;
 
 		public List<GraphConnection> GetConnections(CPos position)
 		{
