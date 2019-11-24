@@ -487,6 +487,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 		{
 			if (source.Type == ModContent.SourceType.Install)
 			{
+				/*
 				if (source.RegistryKey == null)
 					return null;
 
@@ -501,7 +502,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 
 					return IsValidSourcePath(path, source) ? path : null;
 				}
-
+				*/
 				return null;
 			}
 

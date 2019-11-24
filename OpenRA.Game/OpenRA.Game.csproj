@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net461</TargetFramework>
+    <TargetFramework>netstandard2.1</TargetFramework>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Optimize>true</Optimize>
     <UseVSHostingProcess>false</UseVSHostingProcess>
@@ -77,7 +77,7 @@
     </ItemGroup>
   </Target>
   <Target Name="PostProcess" AfterTargets="Build" Inputs="$(TargetPath)" Outputs="$(IntermediateOutputPath)\$(TargetFileName).processed">
-    <Exec Command="$(ManagedExeLauncher)&quot;$(TargetDir)OpenRA.PostProcess.exe&quot; &quot;$(TargetPath)&quot; -LAA" />
+    <Exec Command="$(ManagedExeLauncher)&quot;$(TargetDir)OpenRA.PostProcess.dll&quot; &quot;$(TargetPath)&quot; -LAA" />
     <Touch Files="$(IntermediateOutputPath)\$(TargetFileName).processed" AlwaysCreate="true" />
   </Target>
 </Project>
