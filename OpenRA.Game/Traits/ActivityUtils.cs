@@ -11,8 +11,8 @@
 
 using System.Diagnostics;
 using System.Linq;
-using OpenRA.Activities;
 using OpenRA.Support;
+using Activity = OpenRA.Activities.Activity;
 
 namespace OpenRA.Traits
 {
