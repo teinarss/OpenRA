@@ -17,6 +17,7 @@
     <CodeAnalysisRuleSet>..\OpenRA.ruleset</CodeAnalysisRuleSet>
     <Configurations>Release;Debug;Release-x86</Configurations>
     <ManagedExeLauncher Condition="('$(OS)' != 'Windows_NT')">dotnet </ManagedExeLauncher>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
   <ItemGroup>
     <!-- Work around an issue where Rider does not detect files in the project root using the default glob -->
@@ -49,10 +50,12 @@
     <None Include="App.config" />
     <PackageReference Include="MaxMind.Db" Version="2.1.1" />
     <PackageReference Include="Open.NAT.Core" Version="2.1.0" />
-    <PackageReference Include="OpenRA-Eluant" Version="1.0.2" />
+    <PackageReference Include="OpenRA-Eluant" Version="1.0.4" />
     <PackageReference Include="OpenRA-OpenAL-CS" Version="1.0.2" />
     <PackageReference Include="OpenRA-SDL2-CS" Version="1.0.2" />
+    <PackageReference Include="rix0rrr.BeaconLib" Version="1.0.2" />
     <PackageReference Include="SharpZipLib" Version="1.1.0" />
+    <PackageReference Include="SolcNet" Version="1.1.116-beta" />
     <PackageReference Include="StyleCop.Analyzers" Version="1.1.118" /> 
     <AdditionalFiles Include="../stylecop.json" />
     <AdditionalFiles Include="Properties/launchSettings.json" />
@@ -63,7 +66,7 @@
       <Analyzer Remove="@(Analyzer)" />
     </ItemGroup>
   </Target>
-  <Target Name="PostProcess" AfterTargets="Build" Inputs="$(TargetPath)" Outputs="$(IntermediateOutputPath)\$(TargetFileName).processed">
+  <Target Name="PostProcess" Condition="('$(OS)' != 'Windows_NT')" AfterTargets="Build" Inputs="$(TargetPath)" Outputs="$(IntermediateOutputPath)\$(TargetFileName).processed">
     <Exec Command="&quot;$(TargetDir)OpenRA.PostProcess&quot; &quot;$(TargetPath)&quot; -LAA" />
     <Touch Files="$(IntermediateOutputPath)\$(TargetFileName).processed" AlwaysCreate="true" />
   </Target>

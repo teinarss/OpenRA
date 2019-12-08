@@ -39,7 +39,7 @@
       <Analyzer Remove="@(Analyzer)" />
     </ItemGroup>
   </Target>
-  <Target Name="PostProcess" AfterTargets="Build" Inputs="$(TargetPath)" Outputs="$(IntermediateOutputPath)\$(TargetFileName).processed">
+  <Target Name="PostProcess" Condition="('$(OS)' != 'Windows_NT')" AfterTargets="Build" Inputs="$(TargetPath)" Outputs="$(IntermediateOutputPath)\$(TargetFileName).processed">
     <Exec Command="$(ManagedExeLauncher)&quot;$(TargetDir)OpenRA.PostProcess.dll&quot; &quot;$(TargetPath)&quot; -LAA" />
     <Touch Files="$(IntermediateOutputPath)\$(TargetFileName).processed" AlwaysCreate="true" />
   </Target>

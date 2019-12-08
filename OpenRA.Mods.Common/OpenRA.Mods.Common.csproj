@@ -11,6 +11,7 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <CodeAnalysisRuleSet>..\OpenRA.ruleset</CodeAnalysisRuleSet>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
   <ItemGroup>
     <!-- Work around an issue where Rider does not detect files in the project root using the default glob -->
@@ -24,7 +25,7 @@
     <ProjectReference Include="..\OpenRA.Game\OpenRA.Game.csproj">
       <Private>False</Private>
     </ProjectReference>
-    <PackageReference Include="OpenRA-Eluant" Version="1.0.2" />
+    <PackageReference Include="OpenRA-Eluant" Version="1.0.4" />
     <PackageReference Include="OpenRA-FuzzyLogicLibrary" Version="1.0.1" />
     <PackageReference Include="rix0rrr.BeaconLib" Version="1.0.2" />
     <PackageReference Include="StyleCop.Analyzers" Version="1.1.118" />
