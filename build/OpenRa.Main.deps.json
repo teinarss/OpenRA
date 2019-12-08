@@ -43,6 +43,15 @@
       },
       "Microsoft.NETCore.Platforms/1.0.1": {},
       "Microsoft.NETCore.Targets/1.0.1": {},
+      "Newtonsoft.Json/11.0.2": {
+        "runtime": {
+          "lib/netstandard2.0/Newtonsoft.Json.dll": {
+            "assemblyVersion": "11.0.0.0",
+            "fileVersion": "11.0.2.21924"
+          }
+        }
+      },
+      "NuGet.CommandLine/4.4.1": {},
       "Open.NAT.Core/2.1.0": {
         "runtime": {
           "lib/netstandard2.0/Open.Nat.dll": {
@@ -51,11 +60,18 @@
           }
         }
       },
-      "OpenRA-Eluant/1.0.2": {
+      "OpenRA-Eluant/1.0.4": {
         "runtime": {
           "lib/netstandard2.0/Eluant.dll": {
             "assemblyVersion": "1.0.0.0",
             "fileVersion": "1.0.0.0"
+          }
+        },
+        "runtimeTargets": {
+          "runtimes/win-x64/native/lua51.dll": {
+            "rid": "win-x64",
+            "assetType": "native",
+            "fileVersion": "5.1.5.0"
           }
         }
       },
@@ -72,6 +88,17 @@
           "lib/netstandard2.0/SDL2-CS.dll": {
             "assemblyVersion": "1.0.0.0",
             "fileVersion": "1.0.0.0"
+          }
+        }
+      },
+      "rix0rrr.BeaconLib/1.0.2": {
+        "dependencies": {
+          "NuGet.CommandLine": "4.4.1"
+        },
+        "runtime": {
+          "lib/netstandard2.0/BeaconLib.dll": {
+            "assemblyVersion": "1.0.2.0",
+            "fileVersion": "1.0.2.0"
           }
         }
       },
@@ -98,6 +125,18 @@
           "lib/netstandard2.0/ICSharpCode.SharpZipLib.dll": {
             "assemblyVersion": "1.1.0.145",
             "fileVersion": "1.1.0.145"
+          }
+        }
+      },
+      "SolcNet/1.1.116-beta": {
+        "dependencies": {
+          "Newtonsoft.Json": "11.0.2",
+          "System.Memory": "4.5.1"
+        },
+        "runtime": {
+          "lib/netstandard2.0/SolcNet.dll": {
+            "assemblyVersion": "1.1.116.0",
+            "fileVersion": "1.1.116.0"
           }
         }
       },
@@ -255,6 +294,7 @@
           "System.Threading": "4.0.11"
         }
       },
+      "System.Memory/4.5.1": {},
       "System.Net.Http/4.1.0": {
         "dependencies": {
           "Microsoft.NETCore.Platforms": "1.0.1",
@@ -580,11 +620,13 @@
         "dependencies": {
           "MaxMind.Db": "2.1.1",
           "Open.NAT.Core": "2.1.0",
-          "OpenRA-Eluant": "1.0.2",
+          "OpenRA-Eluant": "1.0.4",
           "OpenRA-OpenAL-CS": "1.0.2",
           "OpenRA-SDL2-CS": "1.0.2",
           "SharpZipLib": "1.1.0",
-          "StyleCop.Analyzers": "1.1.118"
+          "SolcNet": "1.1.116-beta",
+          "StyleCop.Analyzers": "1.1.118",
+          "rix0rrr.BeaconLib": "1.0.2"
         },
         "runtime": {
           "OpenRA.Game.dll": {}
@@ -619,6 +661,20 @@
       "path": "microsoft.netcore.targets/1.0.1",
       "hashPath": "microsoft.netcore.targets.1.0.1.nupkg.sha512"
     },
+    "Newtonsoft.Json/11.0.2": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-IvJe1pj7JHEsP8B8J8DwlMEx8UInrs/x+9oVY+oCD13jpLu4JbJU2WCIsMRn5C4yW9+DgkaO8uiVE5VHKjpmdQ==",
+      "path": "newtonsoft.json/11.0.2",
+      "hashPath": "newtonsoft.json.11.0.2.nupkg.sha512"
+    },
+    "NuGet.CommandLine/4.4.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-c6HpeBpZx1bwKXUFnZhwlBzzPYcf/ETPxEPeNlh/4s4MAfp8WOqcIuAjTCrARBP6uyZiloukjch8whyzyPDdtQ==",
+      "path": "nuget.commandline/4.4.1",
+      "hashPath": "nuget.commandline.4.4.1.nupkg.sha512"
+    },
     "Open.NAT.Core/2.1.0": {
       "type": "package",
       "serviceable": true,
@@ -626,12 +682,12 @@
       "path": "open.nat.core/2.1.0",
       "hashPath": "open.nat.core.2.1.0.nupkg.sha512"
     },
-    "OpenRA-Eluant/1.0.2": {
+    "OpenRA-Eluant/1.0.4": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-1ifFrcnSBDeDj1rdPAg0J5WrUzv2XiJu1h+G8+x1oN3xrotuaHFgb3F/jLk4aj3QSgPz03uveGGPgE/tGiyPog==",
-      "path": "openra-eluant/1.0.2",
-      "hashPath": "openra-eluant.1.0.2.nupkg.sha512"
+      "sha512": "sha512-r2yHAxRVp6sGEAi1U8ydesYzTBx3mZI1yuXTQVRXVjaWrqpA0t54efmrbB6iCrx+EBo/TnmMUfVM+r2TAip/nw==",
+      "path": "openra-eluant/1.0.4",
+      "hashPath": "openra-eluant.1.0.4.nupkg.sha512"
     },
     "OpenRA-OpenAL-CS/1.0.2": {
       "type": "package",
@@ -646,6 +702,13 @@
       "sha512": "sha512-2MFtWayUzq59krhQ1YctCNnYFXRTiyLRSwBz3z1PiCvn96XxZz/IOIUAYjy8BSWLJipYESnA2aMuEj4K8PELnA==",
       "path": "openra-sdl2-cs/1.0.2",
       "hashPath": "openra-sdl2-cs.1.0.2.nupkg.sha512"
+    },
+    "rix0rrr.BeaconLib/1.0.2": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-zIrNwNejV0lS9Zg1AFkODpoH2x1a38SNWs7Jhous87fbIK3OBAScIIF26QmQG4Q7ZBlBPsG/oldfUfygbqW65w==",
+      "path": "rix0rrr.beaconlib/1.0.2",
+      "hashPath": "rix0rrr.beaconlib.1.0.2.nupkg.sha512"
     },
     "runtime.native.System/4.0.0": {
       "type": "package",
@@ -674,6 +737,13 @@
       "sha512": "sha512-6cwSz51tzupsfb8q5AVRDqvD4vSeDDJuv3CYWCvQ+T3wrAjQtniICiczb+++j93z3NNuCZN+TiRjZ5lnfWtleQ==",
       "path": "sharpziplib/1.1.0",
       "hashPath": "sharpziplib.1.1.0.nupkg.sha512"
+    },
+    "SolcNet/1.1.116-beta": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-E+8TFdp9Wc6t7+p3qiDQDK2QYDyaVeSTdVrUwjS+M2GzFSehjOqAHbCet6qzryQ9eVybA1XY3L0kbSoV45TEyw==",
+      "path": "solcnet/1.1.116-beta",
+      "hashPath": "solcnet.1.1.116-beta.nupkg.sha512"
     },
     "StyleCop.Analyzers/1.1.118": {
       "type": "package",
@@ -786,6 +856,13 @@
       "sha512": "sha512-I+y02iqkgmCAyfbqOmSDOgqdZQ5tTj80Akm5BPSS8EeB0VGWdy6X1KCoYe8Pk6pwDoAKZUOdLVxnTJcExiv5zw==",
       "path": "system.linq.expressions/4.1.0",
       "hashPath": "system.linq.expressions.4.1.0.nupkg.sha512"
+    },
+    "System.Memory/4.5.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-sDJYJpGtTgx+23Ayu5euxG5mAXWdkDb4+b0rD0Cab0M1oQS9H0HXGPriKcqpXuiJDTV7fTp/d+fMDJmnr6sNvA==",
+      "path": "system.memory/4.5.1",
+      "hashPath": "system.memory.4.5.1.nupkg.sha512"
     },
     "System.Net.Http/4.1.0": {
       "type": "package",

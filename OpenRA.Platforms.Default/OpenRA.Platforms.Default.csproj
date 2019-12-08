@@ -23,7 +23,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\OpenRA.Game\OpenRA.Game.csproj" />
-    <PackageReference Include="OpenRA-Eluant" Version="1.0.2" />
+    <PackageReference Include="OpenRA-Eluant" Version="1.0.4" />
     <PackageReference Include="OpenRA-OpenAL-CS" Version="1.0.2" />
     <PackageReference Include="OpenRA-SDL2-CS" Version="1.0.2" />
     <PackageReference Include="StyleCop.Analyzers" Version="1.1.118" />
