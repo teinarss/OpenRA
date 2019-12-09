@@ -27,6 +27,7 @@ mods/*/*.pdb
 /*.exe.config
 thirdparty/download/*
 *.mmdb.gz
+/build/
 
 build/**/*.dll
 build/**/*.exe
@@ -74,3 +75,4 @@ StyleCopViolations.xml
 
 # IntelliJ files
 .idea
+
