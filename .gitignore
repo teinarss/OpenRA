@@ -28,6 +28,13 @@ mods/*/*.pdb
 thirdparty/download/*
 *.mmdb.gz
 
+build/**/*.dll
+build/**/*.exe
+build/**/*.so
+build/**/*.deps.json
+build/runtimes
+
+
 # backup files by various editors
 *~
 *.orig
