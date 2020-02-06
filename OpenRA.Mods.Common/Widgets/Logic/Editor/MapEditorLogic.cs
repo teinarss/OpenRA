@@ -89,6 +89,15 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 				redoButton.IsDisabled = () => !actionManager.HasRedos();
 				redoButton.OnClick = () => actionManager.Redo();
 			}
+
+			var lockGuidelinesButton = widget.GetOrNull<ButtonWidget>("LOCK_GUIDELINES_BUTTON");
+			if (lockGuidelinesButton != null)
+			{
+				var editorGuides = widget.GetOrNull<EditorGuidesWidget>("EDITOR_GUIDES");
+
+				lockGuidelinesButton.OnClick = () => editorGuides.IsLocked ^= true;
+				lockGuidelinesButton.GetText = () => editorGuides.IsLocked ? "Unlock" : "Lock";
+			}
 		}
 
 		Widget CreateCategoriesPanel()

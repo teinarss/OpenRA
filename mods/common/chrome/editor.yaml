@@ -333,6 +333,9 @@ Container@EDITOR_WORLD_ROOT:
 			BookmarkSaveKeyPrefix: MapBookmarkSave
 			BookmarkRestoreKeyPrefix: MapBookmarkRestore
 			BookmarkKeyCount: 4
+		EditorGuides@EDITOR_GUIDES:
+			Width: WINDOW_RIGHT
+			Height: WINDOW_BOTTOM
 		Background@RADAR_BG:
 			X: WINDOW_RIGHT - 325
 			Y: 5

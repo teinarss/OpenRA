@@ -338,6 +338,9 @@ Container@EDITOR_WORLD_ROOT:
 			BookmarkSaveKeyPrefix: MapBookmarkSave
 			BookmarkRestoreKeyPrefix: MapBookmarkRestore
 			BookmarkKeyCount: 4
+		EditorGuides@EDITOR_GUIDES:
+			Width: WINDOW_RIGHT
+			Height: WINDOW_BOTTOM
 		Background@RADAR_BG:
 			X: WINDOW_RIGHT - 295
 			Y: 5
@@ -648,6 +651,16 @@ Container@EDITOR_WORLD_ROOT:
 			Align: Left
 			Font: Bold
 			Contrast: true
+		Button@LOCK_GUIDELINES_BUTTON:
+			X: WINDOW_RIGHT - 870
+			Y: 5
+			Width: 100
+			Height: 25
+			Text: Lock
+			Font: Bold
+			TooltipTemplate: BUTTON_TOOLTIP
+			TooltipText: Toggle the terrain grid
+			TooltipContainer: TOOLTIP_CONTAINER
 
 ScrollPanel@CATEGORY_FILTER_PANEL:
 	Width: 230

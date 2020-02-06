@@ -10,8 +10,14 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Runtime.Remoting;
 using OpenRA.Graphics;
 using OpenRA.Mods.Common.Traits;
+using OpenRA.Mods.Common.Activities;
+using OpenRA.Primitives;
 using OpenRA.Widgets;
 
 namespace OpenRA.Mods.Common.Widgets
@@ -112,5 +118,229 @@ namespace OpenRA.Mods.Common.Widgets
 			base.Removed();
 			editorActionManager.OnChange -= EditorActionManagerOnChange;
 		}
+	}
+
+	public class EditorGuidesWidget : Widget
+	{
+		int2 location;
+		WorldRenderer worldRenderer;
+		GuideLinesEdge topEdge;
+		List<GuideLine> lines = new List<GuideLine>();
+		GuideLine activeLine = null;
+		int2 mapMapSize;
+		bool activated;
+		GuideLinesEdge leftEdge;
+
+		public bool IsLocked { get; set; }
+
+		[ObjectCreator.UseCtor]
+		public EditorGuidesWidget(World world, WorldRenderer worldRenderer)
+		{
+			this.worldRenderer = worldRenderer;
+			mapMapSize = world.Map.MapSize * 24;
+
+			topEdge = new GuideLinesEdge(new int2(0, -20), new int2(mapMapSize.X, 0), Edge.Vertical);
+			topEdge.OnEvent = OnEvent;
+
+			leftEdge = new GuideLinesEdge(new int2(-20, 0), new int2(0, mapMapSize.Y), Edge.Horizontal);
+			leftEdge.OnEvent = OnEvent;
+		}
+
+		void OnEvent(Edge edge)
+		{
+			var angle = edge == Edge.Horizontal ? Math.PI / 2 : 0;
+			var guideLine = new GuideLine(mapMapSize, angle);
+			lines.Add(guideLine);
+			activeLine = guideLine;
+		}
+
+		public override void Tick()
+		{
+		}
+
+		public override void Draw()
+		{
+            var font = Game.Renderer.Fonts["Regular"];
+
+            var pos = new WPos(-1024, location.Y, location.Y);
+            var text = "";
+            var screenPos = worldRenderer.Viewport.Zoom * (worldRenderer.ScreenPosition(pos) - worldRenderer.Viewport.TopLeft.ToFloat2()) - 0.5f * font.Measure(text).ToFloat2();
+            var screenPxPos = new float2((float)Math.Round(screenPos.X), (float)Math.Round(screenPos.Y));
+
+            var pos1 = new float2(0, location.Y);
+            font.DrawText(text, pos1, Color.LightGreen);
+
+            var cr = Game.Renderer.WorldRgbaColorRenderer;
+
+            foreach (var line in lines)
+            {
+				line.Draw(cr);
+            }
+
+            topEdge.Draw(cr);
+            leftEdge.Draw(cr);
+		}
+
+		public override bool EventBounds2(int2 location)
+		{
+			if (IsLocked)
+				return false;
+
+			if (activated)
+				return true;
+
+			var loc = worldRenderer.Viewport.ViewToWorldPx(location);
+
+			if (topEdge.IsOver(loc))
+				return true;
+
+			if (leftEdge.IsOver(loc))
+				return true;
+
+			foreach (var line in lines)
+				if (line.Hit(loc))
+					return true;
+
+			return false;
+		}
+
+		public override bool HandleMouseInput(MouseInput mi)
+		{
+			if (mi.Event == MouseInputEvent.Move)
+			{
+                location = worldRenderer.Viewport.ViewToWorldPx(mi.Location);
+
+                if (activeLine != null)
+	                activeLine.UpdateLocation(location);
+			}
+
+			if (mi.Event == MouseInputEvent.Up && mi.Button == MouseButton.Right)
+				DeleteLine(location);
+
+			if (mi.Event == MouseInputEvent.Up)
+			{
+				activeLine = null;
+				activated = false;
+			}
+
+			if (mi.Event == MouseInputEvent.Down && mi.Button == MouseButton.Left)
+			{
+				activated = true;
+				activeLine = FindLine(location);
+			}
+
+			topEdge.HandleMouseInput(mi, location);
+			leftEdge.HandleMouseInput(mi, location);
+
+			return true;
+		}
+
+		GuideLine FindLine(int2 loc)
+		{
+			return lines.FirstOrDefault(l => l.Hit(loc));
+		}
+
+		void DeleteLine(int2 loc)
+		{
+			var line = FindLine(loc);
+
+			if (line != null)
+				lines.Remove(line);
+		}
+	}
+
+	internal class GuideLine
+	{
+		const int Width = 4;
+		int2 location;
+		double angle = Math.PI / 2;
+		int2[] bounds = new[] { new int2(1, 2) };
+
+		public GuideLine(int2 mapMapSize, double angle)
+		{
+			this.angle = angle;
+		}
+
+		public void UpdateLocation(int2 location)
+		{
+			this.location = location;
+		}
+
+		public bool Hit(int2 location)
+		{
+			return bounds.PolygonContains(location);
+		}
+
+		public void Draw(RgbaColorRenderer cr)
+		{
+			var lenght = 1000;
+			var x2 = (float)(location.X + lenght * Math.Cos(angle));
+			var y2 = (float)(location.Y + lenght * Math.Sin(angle));
+
+			var startPos = new float3(location.X, location.Y, location.Y);
+			var endPos = new float3(x2, y2, y2);
+			cr.DrawLine(startPos, endPos, 1, Color.Red);
+
+			x2 = (float)(location.X - lenght * Math.Cos(angle));
+			y2 = (float)(location.Y - lenght * Math.Sin(angle));
+
+			startPos = new float3(location.X, location.Y, location.Y);
+			endPos = new float3(x2, y2, y2);
+			cr.DrawLine(startPos, endPos, 1, Color.Red);
+		}
+	}
+
+	class GuideLinesEdge
+	{
+		readonly Edge vertical;
+		Rectangle bounds;
+		bool dragStarted;
+
+		public Action<Edge> OnEvent;
+
+		public GuideLinesEdge(int2 topLeft, int2 bottomLeft, Edge vertical)
+		{
+			this.vertical = vertical;
+			var width = bottomLeft.X - topLeft.X;
+			var height = bottomLeft.Y - topLeft.Y;
+			bounds = new Rectangle(topLeft.X, topLeft.Y, width, height);
+		}
+
+		public void HandleMouseInput(MouseInput mi, int2 location)
+		{
+			if (dragStarted && !bounds.Contains(location))
+			{
+				dragStarted = false;
+				if (OnEvent != null)
+					OnEvent(vertical);
+
+				return;
+			}
+
+			if (!bounds.Contains(location))
+                return;
+
+			if (mi.Event == MouseInputEvent.Down)
+	            dragStarted = true;
+
+			if (mi.Event == MouseInputEvent.Up)
+	            dragStarted = false;
+		}
+
+		public bool IsOver(int2 location)
+		{
+			return bounds.Contains(location);
+		}
+
+		public void Draw(RgbaColorRenderer cr)
+		{
+			cr.FillRect(new float3(bounds.X, bounds.Y, bounds.Y), new float3(bounds.X + bounds.Width, bounds.Y + bounds.Height, bounds.Y + bounds.Height), Color.FromArgb(128, 128, 128));
+		}
+	}
+
+	enum Edge
+	{
+		Vertical,
+		Horizontal
 	}
 }
