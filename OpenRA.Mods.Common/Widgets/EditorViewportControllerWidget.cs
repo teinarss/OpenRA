@@ -11,12 +11,9 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.Runtime.Remoting;
 using OpenRA.Graphics;
 using OpenRA.Mods.Common.Traits;
-using OpenRA.Mods.Common.Activities;
 using OpenRA.Primitives;
 using OpenRA.Widgets;
 
