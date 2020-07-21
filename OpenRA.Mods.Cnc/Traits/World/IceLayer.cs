@@ -33,6 +33,7 @@ namespace OpenRA.Mods.Cnc.Traits
 	{
 		readonly IceLayerInfo info;
 		readonly Dictionary<CPos, Sprite> dirty = new Dictionary<CPos, Sprite>();
+		readonly Queue<CPos> dirtyToRemove = new Queue<CPos>();
 		readonly Dictionary<string, int[]> tiles;
 
 		public readonly CellLayer<int> Strength;
@@ -66,52 +67,53 @@ namespace OpenRA.Mods.Cnc.Traits
 		public static readonly Dictionary<ClearSides, int> SpriteMap = new Dictionary<ClearSides, int>()
 		{
 			{ ClearSides.None, 0 },
-			{ ClearSides.Left | ClearSides.Top | ClearSides.TopLeft | ClearSides.TopRight | ClearSides.BottomLeft | ClearSides.BottomRight, 2 },
-			{ ClearSides.Top | ClearSides.Right | ClearSides.TopLeft | ClearSides.TopRight | ClearSides.BottomLeft | ClearSides.BottomRight, 3 },
-			{ ClearSides.Left | ClearSides.Bottom | ClearSides.TopLeft | ClearSides.TopRight | ClearSides.BottomLeft | ClearSides.BottomRight, 4 },
-			{ ClearSides.Right | ClearSides.Bottom | ClearSides.TopLeft | ClearSides.TopRight | ClearSides.BottomLeft | ClearSides.BottomRight, 5 },
-			{ ClearSides.Left | ClearSides.TopLeft | ClearSides.TopRight | ClearSides.BottomLeft | ClearSides.BottomRight, 6 },
-			{ ClearSides.Right | ClearSides.TopLeft | ClearSides.TopRight | ClearSides.BottomLeft | ClearSides.BottomRight, 7 },
-			{ ClearSides.Top | ClearSides.TopLeft | ClearSides.TopRight | ClearSides.BottomLeft | ClearSides.BottomRight, 8 },
-			{ ClearSides.Bottom | ClearSides.TopLeft | ClearSides.TopRight | ClearSides.BottomLeft | ClearSides.BottomRight, 9 },
-			{ ClearSides.Left | ClearSides.Top | ClearSides.TopLeft | ClearSides.TopRight | ClearSides.BottomLeft, 10 },
-			{ ClearSides.Top | ClearSides.Right | ClearSides.TopLeft | ClearSides.TopRight | ClearSides.BottomRight, 11 },
-			{ ClearSides.Left | ClearSides.Bottom | ClearSides.TopLeft | ClearSides.BottomLeft | ClearSides.BottomRight, 12 },
-			{ ClearSides.Right | ClearSides.Bottom | ClearSides.TopRight | ClearSides.BottomLeft | ClearSides.BottomRight, 13 },
-			{ ClearSides.Left | ClearSides.Top | ClearSides.Right | ClearSides.TopLeft | ClearSides.TopRight | ClearSides.BottomLeft | ClearSides.BottomRight, 14 },
-			{ ClearSides.Left | ClearSides.Right | ClearSides.Bottom | ClearSides.TopLeft | ClearSides.TopRight | ClearSides.BottomLeft | ClearSides.BottomRight, 15 },
-			{ ClearSides.Left | ClearSides.Top | ClearSides.Bottom | ClearSides.TopLeft | ClearSides.TopRight | ClearSides.BottomLeft | ClearSides.BottomRight, 16 },
-			{ ClearSides.Top | ClearSides.Right | ClearSides.Bottom | ClearSides.TopLeft | ClearSides.TopRight | ClearSides.BottomLeft | ClearSides.BottomRight, 17 },
-			{ ClearSides.Top | ClearSides.TopLeft | ClearSides.TopRight, 18 },
-			{ ClearSides.Right | ClearSides.TopRight | ClearSides.BottomRight, 19 },
-			{ ClearSides.Left | ClearSides.TopLeft | ClearSides.BottomLeft, 20 },
-			{ ClearSides.Bottom | ClearSides.BottomLeft | ClearSides.BottomRight, 21 },
+			{ ClearSides.Left | ClearSides.Top | ClearSides.TopLeft | ClearSides.TopRight | ClearSides.BottomLeft | ClearSides.BottomRight, 0 },
+			{ ClearSides.Top | ClearSides.Right | ClearSides.TopLeft | ClearSides.TopRight | ClearSides.BottomLeft | ClearSides.BottomRight, 0 },
+			{ ClearSides.Left | ClearSides.Bottom | ClearSides.TopLeft | ClearSides.TopRight | ClearSides.BottomLeft | ClearSides.BottomRight, 0 },
+			{ ClearSides.Right | ClearSides.Bottom | ClearSides.TopLeft | ClearSides.TopRight | ClearSides.BottomLeft | ClearSides.BottomRight, 0 },
+			{ ClearSides.Left | ClearSides.TopLeft | ClearSides.TopRight | ClearSides.BottomLeft | ClearSides.BottomRight, 0 },
+			{ ClearSides.Right | ClearSides.TopLeft | ClearSides.TopRight | ClearSides.BottomLeft | ClearSides.BottomRight, 0 },
+			{ ClearSides.Top | ClearSides.TopLeft | ClearSides.TopRight | ClearSides.BottomLeft | ClearSides.BottomRight, 0 },
+			{ ClearSides.Bottom | ClearSides.TopLeft | ClearSides.TopRight | ClearSides.BottomLeft | ClearSides.BottomRight, 0 },
+			{ ClearSides.Left | ClearSides.Top | ClearSides.TopLeft | ClearSides.TopRight | ClearSides.BottomLeft, 0 },
+			{ ClearSides.Top | ClearSides.Right | ClearSides.TopLeft | ClearSides.TopRight | ClearSides.BottomRight, 0 },
+			{ ClearSides.Left | ClearSides.Bottom | ClearSides.TopLeft | ClearSides.BottomLeft | ClearSides.BottomRight, 0 },
+			{ ClearSides.Right | ClearSides.Bottom | ClearSides.TopRight | ClearSides.BottomLeft | ClearSides.BottomRight, 0 },
+			{ ClearSides.Left | ClearSides.Top | ClearSides.Right | ClearSides.TopLeft | ClearSides.TopRight | ClearSides.BottomLeft | ClearSides.BottomRight, 0 },
+			{ ClearSides.Left | ClearSides.Right | ClearSides.Bottom | ClearSides.TopLeft | ClearSides.TopRight | ClearSides.BottomLeft | ClearSides.BottomRight, 0 },
+			{ ClearSides.Left | ClearSides.Top | ClearSides.Bottom | ClearSides.TopLeft | ClearSides.TopRight | ClearSides.BottomLeft | ClearSides.BottomRight, 0 },
+			{ ClearSides.Top | ClearSides.Right | ClearSides.Bottom | ClearSides.TopLeft | ClearSides.TopRight | ClearSides.BottomLeft | ClearSides.BottomRight, 0 },
+			{ ClearSides.Top | ClearSides.TopLeft | ClearSides.TopRight, 20 },
+			{ ClearSides.Right | ClearSides.TopRight | ClearSides.BottomRight, 24 },
+			{ ClearSides.Left | ClearSides.TopLeft | ClearSides.BottomLeft, 18 },
+			{ ClearSides.Bottom | ClearSides.BottomLeft | ClearSides.BottomRight, 17 },
+			{ ClearSides.Left | ClearSides.Top | ClearSides.TopLeft | ClearSides.BottomLeft | ClearSides.Bottom, 49 },
 			{ ClearSides.TopLeft, 0 },
 			{ ClearSides.TopRight, 0 },
 			{ ClearSides.BottomLeft, 0 },
 			{ ClearSides.BottomRight, 0 },
-			{ ClearSides.Left | ClearSides.TopLeft | ClearSides.BottomLeft | ClearSides.BottomRight, 26 },
-			{ ClearSides.Right | ClearSides.TopRight | ClearSides.BottomLeft | ClearSides.BottomRight, 27 },
-			{ ClearSides.Top | ClearSides.TopLeft | ClearSides.TopRight | ClearSides.BottomRight, 28 },
-			{ ClearSides.Top | ClearSides.TopLeft | ClearSides.TopRight | ClearSides.BottomLeft, 29 },
-			{ ClearSides.TopRight | ClearSides.BottomLeft | ClearSides.BottomRight, 30 },
-			{ ClearSides.TopLeft | ClearSides.BottomLeft | ClearSides.BottomRight, 31 },
-			{ ClearSides.TopLeft | ClearSides.TopRight | ClearSides.BottomRight, 32 },
-			{ ClearSides.TopLeft | ClearSides.TopRight | ClearSides.BottomLeft, 33 },
-			{ ClearSides.TopRight | ClearSides.BottomRight, 34 },
-			{ ClearSides.TopLeft | ClearSides.TopRight, 35 },
-			{ ClearSides.TopRight | ClearSides.BottomLeft, 36 },
-			{ ClearSides.TopLeft | ClearSides.BottomLeft, 37 },
-			{ ClearSides.BottomLeft | ClearSides.BottomRight, 38 },
-			{ ClearSides.TopLeft | ClearSides.BottomRight, 39 },
-			{ ClearSides.TopLeft | ClearSides.TopRight | ClearSides.BottomLeft | ClearSides.BottomRight, 40 },
-			{ ClearSides.Left | ClearSides.Right | ClearSides.TopLeft | ClearSides.TopRight | ClearSides.BottomLeft | ClearSides.BottomRight, 41 },
-			{ ClearSides.Top | ClearSides.Bottom | ClearSides.TopLeft | ClearSides.TopRight | ClearSides.BottomLeft | ClearSides.BottomRight, 42 },
-			{ ClearSides.All, 63 },
-			{ ClearSides.Left | ClearSides.TopLeft | ClearSides.TopRight | ClearSides.BottomLeft, 46 },
-			{ ClearSides.Right | ClearSides.TopLeft | ClearSides.TopRight | ClearSides.BottomRight, 47 },
-			{ ClearSides.Bottom | ClearSides.TopRight | ClearSides.BottomLeft | ClearSides.BottomRight, 48 },
-			{ ClearSides.Bottom | ClearSides.TopLeft | ClearSides.BottomLeft | ClearSides.BottomRight, 49 },
+			{ ClearSides.Left | ClearSides.TopLeft | ClearSides.BottomLeft | ClearSides.BottomRight, 0 },
+			{ ClearSides.Right | ClearSides.TopRight | ClearSides.BottomLeft | ClearSides.BottomRight, 0 },
+			{ ClearSides.Top | ClearSides.TopLeft | ClearSides.TopRight | ClearSides.BottomRight, 0 },
+			{ ClearSides.Top | ClearSides.TopLeft | ClearSides.TopRight | ClearSides.BottomLeft, 0 },
+			{ ClearSides.TopRight | ClearSides.BottomLeft | ClearSides.BottomRight, 0 },
+			{ ClearSides.TopLeft | ClearSides.BottomLeft | ClearSides.BottomRight, 0 },
+			{ ClearSides.TopLeft | ClearSides.TopRight | ClearSides.BottomRight, 0 },
+			{ ClearSides.TopLeft | ClearSides.TopRight | ClearSides.BottomLeft, 0 },
+			{ ClearSides.TopRight | ClearSides.BottomRight, 0 },
+			{ ClearSides.TopLeft | ClearSides.TopRight, 0 },
+			{ ClearSides.TopRight | ClearSides.BottomLeft, 0 },
+			{ ClearSides.TopLeft | ClearSides.BottomLeft, 0 },
+			{ ClearSides.BottomLeft | ClearSides.BottomRight, 0 },
+			{ ClearSides.TopLeft | ClearSides.BottomRight, 0 },
+			{ ClearSides.TopLeft | ClearSides.TopRight | ClearSides.BottomLeft | ClearSides.BottomRight, 0 },
+			{ ClearSides.Left | ClearSides.Right | ClearSides.TopLeft | ClearSides.TopRight | ClearSides.BottomLeft | ClearSides.BottomRight, 0 },
+			{ ClearSides.Top | ClearSides.Bottom | ClearSides.TopLeft | ClearSides.TopRight | ClearSides.BottomLeft | ClearSides.BottomRight, 0 },
+			{ ClearSides.All, 0 },
+			{ ClearSides.Left | ClearSides.TopLeft | ClearSides.TopRight | ClearSides.BottomLeft, 0 },
+			{ ClearSides.Right | ClearSides.TopLeft | ClearSides.TopRight | ClearSides.BottomRight, 0 },
+			{ ClearSides.Bottom | ClearSides.TopRight | ClearSides.BottomLeft | ClearSides.BottomRight, 0 },
+			{ ClearSides.Bottom | ClearSides.TopLeft | ClearSides.BottomLeft | ClearSides.BottomRight, 0 },
 		};
 
 		public IceLayer(Actor self, IceLayerInfo info)
@@ -127,7 +129,7 @@ namespace OpenRA.Mods.Cnc.Traits
 					"ice1", new[]
 					{
 						439,
-						440, 441, 442, 443, 444, 445,  446, 447,
+						440, 441, 442, 443, 444, 445,  446, 447, // 8
 						448, 449, 450, 451, 452, 453,  454, 455,
 						456, 457, 458, 459, 460, 461,  462, 463,
 						464, 465, 466, 467, 468, 469,  470, 471,
@@ -142,7 +144,7 @@ namespace OpenRA.Mods.Cnc.Traits
 					"ice2", new[]
 					{
 						503,
-						504, 505, 506, 507, 508, 509, 510, 511,
+						504, 505, 506, 507, 508, 509, 510, 511, // 8
 						512, 513, 514, 515, 516, 517, 518, 519,
 						520, 521, 522, 523, 524, 525, 526, 527,
 						528, 529, 530, 531, 532, 533, 534, 535,
@@ -219,31 +221,38 @@ namespace OpenRA.Mods.Cnc.Traits
 			return Strength[c] > 0;
 		}
 
-		ClearSides FindClearSides(CPos p)
+		bool Oouo(World world, CPos c)
+		{
+			var tile = world.Map.Tiles[c];
+			return !CellContains(c) && (tile.Type >= 333 && tile.Type <= 346);
+		}
+
+		ClearSides FindClearSides(World world, CPos p)
 		{
 			var ret = ClearSides.None;
-			if (!CellContains(p + new CVec(0, -1)))
+
+			if (Oouo(world, p + new CVec(0, -1)))
 				ret |= ClearSides.Top | ClearSides.TopLeft | ClearSides.TopRight;
 
-			if (!CellContains(p + new CVec(-1, 0)))
+			if (Oouo(world, p + new CVec(-1, 0)))
 				ret |= ClearSides.Left | ClearSides.TopLeft | ClearSides.BottomLeft;
 
-			if (!CellContains(p + new CVec(1, 0)))
+			if (Oouo(world, p + new CVec(1, 0)))
 				ret |= ClearSides.Right | ClearSides.TopRight | ClearSides.BottomRight;
 
-			if (!CellContains(p + new CVec(0, 1)))
+			if (Oouo(world, p + new CVec(0, 1)))
 				ret |= ClearSides.Bottom | ClearSides.BottomLeft | ClearSides.BottomRight;
 
-			if (!CellContains(p + new CVec(-1, -1)))
+			if (Oouo(world, p + new CVec(-1, -1)))
 				ret |= ClearSides.TopLeft;
 
-			if (!CellContains(p + new CVec(1, -1)))
+			if (Oouo(world, p + new CVec(1, -1)))
 				ret |= ClearSides.TopRight;
 
-			if (!CellContains(p + new CVec(-1, 1)))
+			if (Oouo(world, p + new CVec(-1, 1)))
 				ret |= ClearSides.BottomLeft;
 
-			if (!CellContains(p + new CVec(1, 1)))
+			if (Oouo(world, p + new CVec(1, 1)))
 				ret |= ClearSides.BottomRight;
 
 			return ret;
@@ -269,7 +278,7 @@ namespace OpenRA.Mods.Cnc.Traits
 				template = 615;
 			}
 
-			var clearSide = FindClearSides(cell);
+			var clearSide = FindClearSides(world, cell);
 
 			var i = SpriteMap[clearSide];
 			var t = ChooseRandomVariant();
@@ -343,18 +352,17 @@ namespace OpenRA.Mods.Cnc.Traits
 
 		void ITickRender.TickRender(WorldRenderer wr, Actor self)
 		{
-			var remove = new List<CPos>();
 			foreach (var kv in dirty)
 			{
 				if (!self.World.FogObscures(kv.Key))
 				{
 					terrainSpriteLayer.Update(kv.Key, kv.Value);
-					remove.Add(kv.Key);
+					dirtyToRemove.Enqueue(kv.Key);
 				}
 			}
 
-			foreach (var r in remove)
-				dirty.Remove(r);
+			while (dirtyToRemove.Count > 0)
+				dirty.Remove(dirtyToRemove.Dequeue());
 		}
 	}
 }
