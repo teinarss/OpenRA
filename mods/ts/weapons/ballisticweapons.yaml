@@ -33,6 +33,8 @@
 	Warhead@4Smu: LeaveSmudge
 		SmudgeType: MediumCrater
 		InvalidTargets: Vehicle, Building, Wall
+	Warhead@5Ice: DestroyIce
+		Size: 0
 
 90mm:
 	Inherits: ^Cannon
