@@ -29,7 +29,7 @@ namespace OpenRA.Mods.Cnc.Traits
 		public override object Create(ActorInitializer init) { return new IceLayer(init.Self, this); }
 	}
 
-	class IceLayer : ITick, IWorldLoaded, IRenderOverlay, ITickRender
+	sealed class IceLayer : ITick, IWorldLoaded, IRenderOverlay, ITickRender
 	{
 		readonly IceLayerInfo info;
 		readonly Dictionary<CPos, Sprite> dirty = new Dictionary<CPos, Sprite>();
@@ -367,6 +367,14 @@ namespace OpenRA.Mods.Cnc.Traits
 
 			while (dirtyToRemove.Count > 0)
 				dirty.Remove(dirtyToRemove.Dequeue());
+		}
+
+		void CheckCell(CPos cell)
+		{
+			var actors = world.ActorMap.GetActorsAt(cell);
+
+			foreach (var actor in actors)
+				actor.Kill(null);
 		}
 
 		public void Destroy(CPos cell)
