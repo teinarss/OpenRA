@@ -211,6 +211,7 @@ MMCH:
 		Bounds: 30, 42, 0, -8
 	Carryable:
 		LocalOffset: 0,0,577
+	DamagesIce:
 
 HMEC:
 	Inherits: ^Tank

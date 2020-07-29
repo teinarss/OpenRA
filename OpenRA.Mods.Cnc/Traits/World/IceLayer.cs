@@ -377,10 +377,13 @@ namespace OpenRA.Mods.Cnc.Traits
 				actor.Kill(null);
 		}
 
-		public void Destroy(CPos cell)
+		public void Damage(CPos cell, int strenght)
 		{
+			if (!iceCells.Contains(cell))
+				return;
+
 			var str = Strength[cell];
-			str -= 512;
+			str -= strenght;
 			Strength[cell] = Math.Max(0, str);
 			UpdateCell(cell);
 		}

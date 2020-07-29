@@ -30,7 +30,7 @@ namespace OpenRA.Mods.Cnc.Traits.Warheads
 
 			// Destroy all resources in the selected tiles
 			foreach (var cell in allCells)
-				resLayer.Destroy(cell);
+				resLayer.Damage(cell, 512);
 		}
 	}
 }
