@@ -11,6 +11,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using OpenRA.Graphics;
 using OpenRA.Mods.Common.Traits;
@@ -136,10 +137,10 @@ namespace OpenRA.Mods.Common.Widgets
 			this.worldRenderer = worldRenderer;
 			mapMapSize = world.Map.MapSize * 24;
 
-			topEdge = new GuideLinesEdge(new int2(0, -20), new int2(mapMapSize.X, 0), Edge.Vertical);
+			topEdge = new GuideLinesEdge(new int2(0, -10), new int2(mapMapSize.X, 0), Edge.Vertical);
 			topEdge.OnEvent = OnEvent;
 
-			leftEdge = new GuideLinesEdge(new int2(-20, 0), new int2(0, mapMapSize.Y), Edge.Horizontal);
+			leftEdge = new GuideLinesEdge(new int2(-10, 0), new int2(0, mapMapSize.Y), Edge.Horizontal);
 			leftEdge.OnEvent = OnEvent;
 		}
 
@@ -157,28 +158,27 @@ namespace OpenRA.Mods.Common.Widgets
 
 		public override void Draw()
 		{
-            var font = Game.Renderer.Fonts["Regular"];
+			var font = Game.Renderer.Fonts["Regular"];
 
-            var pos = new WPos(-1024, location.Y, location.Y);
-            var text = "";
-            var screenPos = worldRenderer.Viewport.Zoom * (worldRenderer.ScreenPosition(pos) - worldRenderer.Viewport.TopLeft.ToFloat2()) - 0.5f * font.Measure(text).ToFloat2();
-            var screenPxPos = new float2((float)Math.Round(screenPos.X), (float)Math.Round(screenPos.Y));
+			var pos = new WPos(-1024, location.Y, location.Y);
+			var text = "";
+			var screenPos = worldRenderer.Viewport.Zoom * (worldRenderer.ScreenPosition(pos) - worldRenderer.Viewport.TopLeft.ToFloat2()) - 0.5f * font.Measure(text).ToFloat2();
+			var screenPxPos = new float2((float)Math.Round(screenPos.X), (float)Math.Round(screenPos.Y));
 
-            var pos1 = new float2(0, location.Y);
-            font.DrawText(text, pos1, Color.LightGreen);
+			var pos1 = new float2(0, location.Y);
+			font.DrawText(text, pos1, Color.LightGreen);
+			var cr = Game.Renderer.RgbaColorRenderer;
 
-            var cr = Game.Renderer.WorldRgbaColorRenderer;
+			foreach (var line in lines)
+			{
+				line.Draw(cr, worldRenderer);
+			}
 
-            foreach (var line in lines)
-            {
-				line.Draw(cr);
-            }
-
-            topEdge.Draw(cr);
-            leftEdge.Draw(cr);
+			leftEdge.Draw(cr, worldRenderer);
+			topEdge.Draw(cr, worldRenderer);
 		}
 
-		public override bool EventBounds2(int2 location)
+		public override bool EventBoundsContains(int2 location)
 		{
 			if (IsLocked)
 				return false;
@@ -205,10 +205,11 @@ namespace OpenRA.Mods.Common.Widgets
 		{
 			if (mi.Event == MouseInputEvent.Move)
 			{
-                location = worldRenderer.Viewport.ViewToWorldPx(mi.Location);
+				location = worldRenderer.Viewport.ViewToWorldPx(mi.Location);
+				Debug.WriteLine($"{location.X}, {location.Y}");
 
-                if (activeLine != null)
-	                activeLine.UpdateLocation(location);
+				if (activeLine != null)
+					activeLine.UpdateLocation(location);
 			}
 
 			if (mi.Event == MouseInputEvent.Up && mi.Button == MouseButton.Right)
@@ -250,11 +251,13 @@ namespace OpenRA.Mods.Common.Widgets
 	{
 		const int Width = 4;
 		int2 location;
+		readonly int2 mapMapSize;
 		double angle = Math.PI / 2;
 		int2[] bounds = new[] { new int2(1, 2) };
 
 		public GuideLine(int2 mapMapSize, double angle)
 		{
+			this.mapMapSize = mapMapSize;
 			this.angle = angle;
 		}
 
@@ -268,22 +271,24 @@ namespace OpenRA.Mods.Common.Widgets
 			return bounds.PolygonContains(location);
 		}
 
-		public void Draw(RgbaColorRenderer cr)
+		public void Draw(RgbaColorRenderer cr, WorldRenderer worldRenderer)
 		{
 			var lenght = 1000;
-			var x2 = (float)(location.X + lenght * Math.Cos(angle));
-			var y2 = (float)(location.Y + lenght * Math.Sin(angle));
+			var loc = worldRenderer.Viewport.WorldToViewPx(new float2(location.X, location.Y)).ToFloat2();
 
-			var startPos = new float3(location.X, location.Y, location.Y);
+			var x2 = (float)(loc.X + lenght * Math.Cos(angle));
+			var y2 = (float)(mapMapSize.Y * Math.Sin(angle));
+
+			var startPos = new float3(loc.X, loc.Y, loc.Y);
+
 			var endPos = new float3(x2, y2, y2);
 			cr.DrawLine(startPos, endPos, 1, Color.Red);
 
-			x2 = (float)(location.X - lenght * Math.Cos(angle));
-			y2 = (float)(location.Y - lenght * Math.Sin(angle));
+			x2 = (float)(loc.X - lenght * Math.Cos(angle));
+			y2 = (float)(loc.Y - lenght * Math.Sin(angle));
 
-			startPos = new float3(location.X, location.Y, location.Y);
+			startPos = new float3(loc.X, loc.Y, loc.Y);
 			endPos = new float3(x2, y2, y2);
-			cr.DrawLine(startPos, endPos, 1, Color.Red);
 		}
 	}
 
@@ -315,13 +320,13 @@ namespace OpenRA.Mods.Common.Widgets
 			}
 
 			if (!bounds.Contains(location))
-                return;
+				return;
 
 			if (mi.Event == MouseInputEvent.Down)
-	            dragStarted = true;
+				dragStarted = true;
 
 			if (mi.Event == MouseInputEvent.Up)
-	            dragStarted = false;
+				dragStarted = false;
 		}
 
 		public bool IsOver(int2 location)
@@ -329,9 +334,13 @@ namespace OpenRA.Mods.Common.Widgets
 			return bounds.Contains(location);
 		}
 
-		public void Draw(RgbaColorRenderer cr)
+		public void Draw(RgbaColorRenderer cr, WorldRenderer worldRenderer)
 		{
-			cr.FillRect(new float3(bounds.X, bounds.Y, bounds.Y), new float3(bounds.X + bounds.Width, bounds.Y + bounds.Height, bounds.Y + bounds.Height), Color.FromArgb(128, 128, 128));
+			var tl = worldRenderer.Viewport.WorldToViewPx(new float2(bounds.Left, bounds.Top)).ToFloat2();
+			var br = worldRenderer.Viewport.WorldToViewPx(new float2(bounds.Right, bounds.Bottom)).ToFloat2();
+
+			var color = Color.FromArgb(128, 128, 128, 128);
+			cr.FillRect(new float3(tl.X, tl.Y, tl.Y), new float3(br.X, br.Y, br.Y), color);
 		}
 	}
 
