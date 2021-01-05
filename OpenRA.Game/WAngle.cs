@@ -82,7 +82,18 @@ namespace OpenRA
 			return new WAngle(aa + (bb - aa) * mul / div);
 		}
 
-		public static WAngle ArcSin(int d)
+		public static WAngle ArcSin2(int d)
+		{
+			if (d < -1024 || d > 1024)
+				Throw();
+
+			var a = ClosestCosineIndex(Math.Abs(d));
+			return new WAngle(d < 0 ? 768 + a : 256 - a);
+
+			static void Throw() => throw new ArgumentException("ArcSin is only valid for values between -1024 and 1024. Received {0}");
+		}
+
+		public static WAngle ArcSin(in int d)
 		{
 			if (d < -1024 || d > 1024)
 				throw new ArgumentException("ArcSin is only valid for values between -1024 and 1024. Received {0}".F(d));
@@ -262,5 +273,6 @@ namespace OpenRA
 		}
 
 		#endregion
+
 	}
 }

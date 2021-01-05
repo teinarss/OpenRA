@@ -60,6 +60,20 @@ namespace OpenRA.Support
 			return low + Next() % diff;
 		}
 
+		public int Next2(int low, int high)
+		{
+			if (high < low)
+				Throw();
+
+			var diff = high - low;
+			if (diff <= 1)
+				return low;
+
+			return low + Next() % diff;
+
+			static void Throw() => throw new ArgumentOutOfRangeException("high", "Maximum value is less than the minimum value.");
+		}
+
 		public int Next(int high)
 		{
 			return Next(0, high);
