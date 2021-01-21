@@ -99,7 +99,7 @@ namespace OpenRA
 		string GLVersion { get; }
 	}
 
-	public interface IVertexBuffer<T> : IDisposable
+	public interface IVertexBuffer<T> : IDisposable where T : struct
 	{
 		void Bind();
 		void SetData(T[] vertices, int length);
