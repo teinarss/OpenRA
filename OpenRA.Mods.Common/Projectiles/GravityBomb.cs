@@ -46,7 +46,7 @@ namespace OpenRA.Mods.Common.Projectiles
 		[Desc("Value added to Velocity every tick.")]
 		public readonly WVec Acceleration = new WVec(0, 0, -15);
 
-		public IProjectile Create(ProjectileArgs args) { return new GravityBomb(this, args); }
+		public IProjectile Create(in ProjectileArgs args) { return new GravityBomb(this, args); }
 	}
 
 	public class GravityBomb : IProjectile, ISync

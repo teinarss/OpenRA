@@ -96,7 +96,7 @@ namespace OpenRA.Mods.Common.Projectiles
 		[Desc("Palette to use for launch effect.")]
 		public readonly string LaunchEffectPalette = "effect";
 
-		public IProjectile Create(ProjectileArgs args)
+		public IProjectile Create(in ProjectileArgs args)
 		{
 			var c = UsePlayerColor ? args.SourceActor.Owner.Color : Color;
 			return new LaserZap(this, args, c);

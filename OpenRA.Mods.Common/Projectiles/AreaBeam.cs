@@ -71,7 +71,7 @@ namespace OpenRA.Mods.Common.Projectiles
 		[Desc("Beam color is the player's color.")]
 		public readonly bool UsePlayerColor = false;
 
-		public IProjectile Create(ProjectileArgs args)
+		public IProjectile Create(in ProjectileArgs args)
 		{
 			var c = UsePlayerColor ? args.SourceActor.Owner.Color : Color;
 			return new AreaBeam(this, args, c);
@@ -81,7 +81,7 @@ namespace OpenRA.Mods.Common.Projectiles
 	public class AreaBeam : IProjectile, ISync
 	{
 		readonly AreaBeamInfo info;
-		readonly ProjectileArgs args;
+		ProjectileArgs args;
 		readonly AttackBase actorAttackBase;
 		readonly Color color;
 		readonly WDist speed;
@@ -193,7 +193,17 @@ namespace OpenRA.Mods.Common.Projectiles
 
 			if (tailTicks <= 0 && args.SourceActor.IsInWorld && !args.SourceActor.IsDead)
 			{
-				args.Source = args.CurrentSource();
+				args = new ProjectileArgs(args.Weapon,
+					args.DamageModifiers,
+					args.InaccuracyModifiers,
+					args.RangeModifiers,
+					args.Facing,
+					args.CurrentMuzzleFacing,
+					args.CurrentSource(),
+					args.CurrentSource,
+					args.SourceActor,
+					args.PassiveTarget,
+					args.GuidedTarget);
 				tailPos = args.Source;
 			}
 

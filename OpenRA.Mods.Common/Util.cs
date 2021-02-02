@@ -266,7 +266,7 @@ namespace OpenRA.Mods.Common
 			return t.Name;
 		}
 
-		public static int GetProjectileInaccuracy(int baseInaccuracy, InaccuracyType inaccuracyType, ProjectileArgs args)
+		public static int GetProjectileInaccuracy(int baseInaccuracy, InaccuracyType inaccuracyType, in ProjectileArgs args)
 		{
 			var inaccuracy = ApplyPercentageModifiers(baseInaccuracy, args.InaccuracyModifiers);
 			switch (inaccuracyType)

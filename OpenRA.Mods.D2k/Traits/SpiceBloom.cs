@@ -130,26 +130,21 @@ namespace OpenRA.Mods.D2k.Traits
 				if (cell == null)
 					cell = cells.Random(self.World.SharedRandom);
 
-				var args = new ProjectileArgs
-				{
-					Weapon = self.World.Map.Rules.Weapons[info.Weapon.ToLowerInvariant()],
-					Facing = WAngle.Zero,
-					CurrentMuzzleFacing = () => WAngle.Zero,
-
-					DamageModifiers = self.TraitsImplementing<IFirepowerModifier>()
+				var args = new ProjectileArgs(
+					self.World.Map.Rules.Weapons[info.Weapon.ToLowerInvariant()],
+					self.TraitsImplementing<IFirepowerModifier>()
 						.Select(a => a.GetFirepowerModifier()).ToArray(),
-
-					InaccuracyModifiers = self.TraitsImplementing<IInaccuracyModifier>()
+					self.TraitsImplementing<IInaccuracyModifier>()
 						.Select(a => a.GetInaccuracyModifier()).ToArray(),
-
-					RangeModifiers = self.TraitsImplementing<IRangeModifier>()
+					self.TraitsImplementing<IRangeModifier>()
 						.Select(a => a.GetRangeModifier()).ToArray(),
-
-					Source = self.CenterPosition,
-					CurrentSource = () => self.CenterPosition,
-					SourceActor = self,
-					PassiveTarget = self.World.Map.CenterOfCell(cell.Value)
-				};
+					WAngle.Zero,
+					() => WAngle.Zero,
+					self.CenterPosition,
+					() => self.CenterPosition,
+					self,
+					self.World.Map.CenterOfCell(cell.Value),
+					Target.Invalid);
 
 				self.World.AddFrameEndTask(_ =>
 				{

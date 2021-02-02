@@ -297,24 +297,18 @@ namespace OpenRA.Mods.Common.Traits
 				passiveTarget += ((Weapon.Burst - Burst) * followingOffset).Rotate(muzzleOrientation);
 			}
 
-			var args = new ProjectileArgs
-			{
-				Weapon = Weapon,
-				Facing = muzzleFacing(),
-				CurrentMuzzleFacing = muzzleFacing,
-
-				DamageModifiers = damageModifiers.ToArray(),
-
-				InaccuracyModifiers = inaccuracyModifiers.ToArray(),
-
-				RangeModifiers = rangeModifiers.ToArray(),
-
-				Source = muzzlePosition(),
-				CurrentSource = muzzlePosition,
-				SourceActor = self,
-				PassiveTarget = passiveTarget,
-				GuidedTarget = target
-			};
+			var args = new ProjectileArgs(
+				Weapon,
+				damageModifiers.ToArray(),
+				inaccuracyModifiers.ToArray(),
+				rangeModifiers.ToArray(),
+				muzzleFacing(),
+				muzzleFacing,
+				muzzlePosition(),
+				muzzlePosition,
+				self,
+				passiveTarget,
+				target);
 
 			// Lambdas can't use 'in' variables, so capture a copy for later
 			var delayedTarget = target;

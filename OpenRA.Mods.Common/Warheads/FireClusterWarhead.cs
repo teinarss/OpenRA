@@ -73,22 +73,18 @@ namespace OpenRA.Mods.Common.Warheads
 			if (!weapon.IsValidAgainst(tc, firedBy.World, firedBy))
 				return;
 
-			var projectileArgs = new ProjectileArgs
-			{
-				Weapon = weapon,
-				Facing = (map.CenterOfCell(targetCell) - target.CenterPosition).Yaw,
-				CurrentMuzzleFacing = () => (map.CenterOfCell(targetCell) - target.CenterPosition).Yaw,
-
-				DamageModifiers = args.DamageModifiers,
-				InaccuracyModifiers = new int[0],
-				RangeModifiers = new int[0],
-
-				Source = target.CenterPosition,
-				CurrentSource = () => target.CenterPosition,
-				SourceActor = firedBy,
-				PassiveTarget = map.CenterOfCell(targetCell),
-				GuidedTarget = tc
-			};
+			var projectileArgs = new ProjectileArgs(
+				weapon,
+				args.DamageModifiers,
+				new int[0],
+				new int[0],
+				(map.CenterOfCell(targetCell) - target.CenterPosition).Yaw,
+				() => WAngle.Zero,
+				target.CenterPosition,
+				() => target.CenterPosition,
+				firedBy,
+				map.CenterOfCell(targetCell),
+				tc);
 
 			if (projectileArgs.Weapon.Projectile != null)
 			{

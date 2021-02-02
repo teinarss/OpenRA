@@ -109,7 +109,7 @@ namespace OpenRA.Mods.Common.Projectiles
 		public readonly int ContrailDelay = 1;
 		public readonly WDist ContrailWidth = new WDist(64);
 
-		public IProjectile Create(ProjectileArgs args) { return new Bullet(this, args); }
+		public IProjectile Create(in ProjectileArgs args) { return new Bullet(this, args); }
 	}
 
 	public class Bullet : IProjectile, ISync

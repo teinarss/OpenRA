@@ -156,7 +156,7 @@ namespace OpenRA.Mods.Common.Projectiles
 			"not trigger fast enough, causing the missile to fly past the target.")]
 		public readonly WDist CloseEnough = new WDist(298);
 
-		public IProjectile Create(ProjectileArgs args) { return new Missile(this, args); }
+		public IProjectile Create(in ProjectileArgs args) { return new Missile(this, args); }
 	}
 
 	// TODO: double check square roots!!!

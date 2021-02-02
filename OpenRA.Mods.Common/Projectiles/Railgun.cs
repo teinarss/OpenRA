@@ -93,7 +93,7 @@ namespace OpenRA.Mods.Common.Projectiles
 		[PaletteReference]
 		public readonly string HitAnimPalette = "effect";
 
-		public IProjectile Create(ProjectileArgs args)
+		public IProjectile Create(in ProjectileArgs args)
 		{
 			var bc = BeamPlayerColor ? Color.FromArgb(BeamColor.A, args.SourceActor.Owner.Color) : BeamColor;
 			var hc = HelixPlayerColor ? Color.FromArgb(HelixColor.A, args.SourceActor.Owner.Color) : HelixColor;
@@ -124,7 +124,7 @@ namespace OpenRA.Mods.Common.Projectiles
 		public WVec UpVector { get; private set; }
 		public WAngle AngleStep { get; private set; }
 
-		public Railgun(ProjectileArgs args, RailgunInfo info, Color beamColor, Color helixColor)
+		public Railgun(in ProjectileArgs args, RailgunInfo info, Color beamColor, Color helixColor)
 		{
 			this.args = args;
 			this.info = info;

@@ -18,19 +18,34 @@ using OpenRA.Traits;
 
 namespace OpenRA.GameRules
 {
-	public class ProjectileArgs
+	public readonly struct ProjectileArgs
 	{
-		public WeaponInfo Weapon;
-		public int[] DamageModifiers;
-		public int[] InaccuracyModifiers;
-		public int[] RangeModifiers;
-		public WAngle Facing;
-		public Func<WAngle> CurrentMuzzleFacing;
-		public WPos Source;
-		public Func<WPos> CurrentSource;
-		public Actor SourceActor;
-		public WPos PassiveTarget;
-		public Target GuidedTarget;
+		public readonly WeaponInfo Weapon;
+		public readonly int[] DamageModifiers;
+		public readonly int[] InaccuracyModifiers;
+		public readonly int[] RangeModifiers;
+		public readonly WAngle Facing;
+		public readonly Func<WAngle> CurrentMuzzleFacing;
+		public readonly WPos Source;
+		public readonly Func<WPos> CurrentSource;
+		public readonly Actor SourceActor;
+		public readonly WPos PassiveTarget;
+		public readonly Target GuidedTarget;
+
+		public ProjectileArgs(WeaponInfo weapon, int[] damageModifiers, int[] inaccuracyModifiers, int[] rangeModifiers, WAngle facing, Func<WAngle> currentMuzzleFacing, WPos source, Func<WPos> currentSource, Actor sourceActor, WPos passiveTarget, Target guidedTarget)
+		{
+			Weapon = weapon;
+			DamageModifiers = damageModifiers;
+			InaccuracyModifiers = inaccuracyModifiers;
+			RangeModifiers = rangeModifiers;
+			Facing = facing;
+			CurrentMuzzleFacing = currentMuzzleFacing;
+			Source = source;
+			CurrentSource = currentSource;
+			SourceActor = sourceActor;
+			PassiveTarget = passiveTarget;
+			GuidedTarget = guidedTarget;
+		}
 	}
 
 	public class WarheadArgs
@@ -68,7 +83,7 @@ namespace OpenRA.GameRules
 	}
 
 	public interface IProjectile : IEffect { }
-	public interface IProjectileInfo { IProjectile Create(ProjectileArgs args); }
+	public interface IProjectileInfo { IProjectile Create(in ProjectileArgs args); }
 
 	public sealed class WeaponInfo
 	{

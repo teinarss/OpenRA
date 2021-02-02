@@ -64,26 +64,22 @@ namespace OpenRA.Mods.Common.Traits
 				for (var i = 0; pieces > i; i++)
 				{
 					var rotation = WRot.FromYaw(new WAngle(self.World.SharedRandom.Next(1024)));
-					var args = new ProjectileArgs
-					{
-						Weapon = wep,
-						Facing = new WAngle(self.World.SharedRandom.Next(1024)),
-						CurrentMuzzleFacing = () => WAngle.Zero,
 
-						DamageModifiers = self.TraitsImplementing<IFirepowerModifier>()
+					var args = new ProjectileArgs(
+						wep,
+						self.TraitsImplementing<IFirepowerModifier>()
 							.Select(a => a.GetFirepowerModifier()).ToArray(),
-
-						InaccuracyModifiers = self.TraitsImplementing<IInaccuracyModifier>()
+						self.TraitsImplementing<IInaccuracyModifier>()
 							.Select(a => a.GetInaccuracyModifier()).ToArray(),
-
-						RangeModifiers = self.TraitsImplementing<IRangeModifier>()
+						self.TraitsImplementing<IRangeModifier>()
 							.Select(a => a.GetRangeModifier()).ToArray(),
-
-						Source = self.CenterPosition,
-						CurrentSource = () => self.CenterPosition,
-						SourceActor = self,
-						PassiveTarget = self.CenterPosition + new WVec(range, 0, 0).Rotate(rotation)
-					};
+						new WAngle(self.World.SharedRandom.Next(1024)),
+						() => WAngle.Zero,
+						self.CenterPosition,
+						() => self.CenterPosition,
+						self,
+						self.CenterPosition + new WVec(range, 0, 0).Rotate(rotation),
+						Target.Invalid);
 
 					self.World.AddFrameEndTask(x =>
 					{
