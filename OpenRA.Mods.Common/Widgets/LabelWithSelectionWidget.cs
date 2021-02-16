@@ -10,6 +10,7 @@
 #endregion
 
 using OpenRA.Graphics;
+using OpenRA.Mods.Common.Traits;
 using OpenRA.Primitives;
 using OpenRA.Widgets;
 
@@ -21,7 +22,6 @@ namespace OpenRA.Mods.Common.Widgets
 		// 1. A color explicitly given to this Widget e.g. from a chrome/**/*/yml file.
 		// 2. A color configured for all LabelWithSelectionWidgets in metrics.yml
 		// 3. A the text color given explcitly to the widget this inherits from.
-		[Translate]
 		public Color? TextColorSelected = ChromeMetrics.GetOrValue<Color?>("TextColorSelected", null);
 		public Color BackgroundColorSelected = ChromeMetrics.Get<Color>("TextBackgroundColorSelected");
 
@@ -43,12 +43,29 @@ namespace OpenRA.Mods.Common.Widgets
 
 			if (Selection.State != Selection.States.Empty && Selection.OwnedBy(this))
 			{
+				var selectedText = text.Substring(Selection.Start, (Selection.End - Selection.Start) + 1);
+
+				var start = int2.Zero;
+
+				if (Selection.Start != 0)
+				{
+					var startText = text.Remove(Selection.Start);
+
+					start = font.Measure(startText);
+				}
+
+				var size = font.Measure(selectedText);
+
+				var startPos = new int2(position.X + start.X, position.Y);
+				var rectangle = Rectangle.FromCorners(startPos, startPos + size);
+
+				WidgetUtils.FillRectWithColor(rectangle, selectedBackgroundColor);
+
 				font.DrawTextWithSelection(
 						text,
 						position,
 						color,
 						selectedColor,
-						selectedBackgroundColor,
 						Selection.Start,
 						Selection.End);
 			}
@@ -62,7 +79,7 @@ namespace OpenRA.Mods.Common.Widgets
 			{
 				case MouseInputEvent.Down:
 					// clicking outside of the element should loose mouse focus and kill the selection
-					if (HasMouseFocus && (!IsVisible() || !GetEventBounds().Contains(mi.Location)))
+					if (HasMouseFocus && (!IsVisible() || !EventBoundsContains(mi.Location)))
 					{
 						Selection.HandleLooseMouseFocus();
 						YieldMouseFocus(mi);

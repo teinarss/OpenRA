@@ -56,8 +56,6 @@ namespace OpenRA.Mods.Common.Widgets
 			}
 		}
 
-		public Selection() { }
-
 		public bool OwnedBy(LabelWidget widget)
 		{
 			return SelectionWidget == widget;
