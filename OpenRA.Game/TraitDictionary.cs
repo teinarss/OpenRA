@@ -298,15 +298,17 @@ namespace OpenRA
 
 			public void ApplyToAllTimed(Action<Actor, T> action, string text)
 			{
+				// PERF: Only output to perf.log and call Stopwatch.GetTimestamp if simulation perf.log output is enabled.
+				var perfLoggingEnabled = Game.Settings.Debug.EnableSimulationPerfLogging;
 				var longTickThresholdInStopwatchTicks = PerfTimer.LongTickThresholdInStopwatchTicks;
-				var start = Stopwatch.GetTimestamp();
+				var start = perfLoggingEnabled ? Stopwatch.GetTimestamp() : 0L;
 				for (var i = 0; i < actors.Count; i++)
 				{
 					var actor = actors[i];
 					var trait = traits[i];
 					action(actor, trait);
-					var current = Stopwatch.GetTimestamp();
-					if (current - start > longTickThresholdInStopwatchTicks)
+					var current = perfLoggingEnabled ? Stopwatch.GetTimestamp() : 0L;
+					if (perfLoggingEnabled && current - start > longTickThresholdInStopwatchTicks)
 					{
 						PerfTimer.LogLongTick(start, current, text, trait);
 						start = Stopwatch.GetTimestamp();
