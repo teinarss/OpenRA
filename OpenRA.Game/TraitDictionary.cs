@@ -148,6 +148,7 @@ namespace OpenRA
 			readonly List<T> traits = new List<T>();
 
 			public int Queries { get; private set; }
+			Bash eueu = new Bash();
 
 			public void Add(Actor actor, object trait)
 			{
@@ -298,25 +299,55 @@ namespace OpenRA
 
 			public void ApplyToAllTimed(Action<Actor, T> action, string text)
 			{
-				// PERF: Only output to perf.log and call Stopwatch.GetTimestamp if simulation perf.log output is enabled.
-				var perfLoggingEnabled = Game.Settings.Debug.EnableSimulationPerfLogging;
-				var longTickThresholdInStopwatchTicks = PerfTimer.LongTickThresholdInStopwatchTicks;
-				var start = perfLoggingEnabled ? Stopwatch.GetTimestamp() : 0L;
+				eueu.Start();
 				for (var i = 0; i < actors.Count; i++)
 				{
 					var actor = actors[i];
 					var trait = traits[i];
 					action(actor, trait);
-					var current = perfLoggingEnabled ? Stopwatch.GetTimestamp() : 0L;
-					if (perfLoggingEnabled && current - start > longTickThresholdInStopwatchTicks)
-					{
-						PerfTimer.LogLongTick(start, current, text, trait);
-						start = Stopwatch.GetTimestamp();
-					}
-					else
-						start = current;
+
+					if (eueu.ShouldLog())
+						eueu.Log(text, trait);
 				}
 			}
+		}
+	}
+
+	class Bash
+	{
+        bool perfLoggingEnabled = Game.Settings.Debug.EnableSimulationPerfLogging;
+        long longTickThresholdInStopwatchTicks = PerfTimer.LongTickThresholdInStopwatchTicks;
+        long current;
+        long start;
+
+		long CurrentTimestamp => perfLoggingEnabled ? Stopwatch.GetTimestamp() : 0L;
+
+        public void Start()
+        {
+	        start = CurrentTimestamp;
+	        
+        }
+
+		public bool ShouldLog()
+		{
+			if (!perfLoggingEnabled)
+				return false;
+
+			current = CurrentTimestamp;
+			if (perfLoggingEnabled && current - start > longTickThresholdInStopwatchTicks)
+			{
+				start = Stopwatch.GetTimestamp();
+				return true;
+			}
+			else
+				start = current;
+
+			return false;
+		}
+
+		public void Log(string name, object item)
+		{
+            PerfTimer.LogLongTick(start, current, name, item);
 		}
 	}
 }
