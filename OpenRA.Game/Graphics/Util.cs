@@ -61,7 +61,7 @@ namespace OpenRA.Graphics
 			vertices[nv + 5] = new Vertex(a, r.Left, r.Top, sl, st, paletteTextureIndex, fAttribC, tint, alpha);
 		}
 
-		public static void FastCopyIntoChannel(Sprite dest, byte[] src, SpriteFrameType srcType)
+		public static void FastCopyIntoChannel(Sprite dest, Span<byte> src, SpriteFrameType srcType)
 		{
 			var destData = dest.Sheet.GetData();
 			var width = dest.Bounds.Width;
@@ -248,7 +248,7 @@ namespace OpenRA.Graphics
 			return mtx;
 		}
 
-		public static float[] MatrixVectorMultiply(float[] mtx, float[] vec)
+		public static float[] MatrixVectorMultiply(float[] mtx, Span<float> vec)
 		{
 			var ret = new float[4];
 			for (var j = 0; j < 4; j++)
@@ -417,9 +417,18 @@ namespace OpenRA.Graphics
 		public static float[] MatrixAABBMultiply(float[] mtx, float[] bounds)
 		{
 			// Corner offsets
-			var ix = new uint[] { 0, 0, 0, 0, 3, 3, 3, 3 };
-			var iy = new uint[] { 1, 1, 4, 4, 1, 1, 4, 4 };
-			var iz = new uint[] { 2, 5, 2, 5, 2, 5, 2, 5 };
+			Span<uint> ix = stackalloc uint[]
+			{
+				0, 0, 0, 0, 3, 3, 3, 3
+			};
+			Span<uint> iy = stackalloc uint[]
+			{
+				1, 1, 4, 4, 1, 1, 4, 4
+			};
+			Span<uint> iz = stackalloc uint[]
+			{
+				2, 5, 2, 5, 2, 5, 2, 5
+			};
 
 			// Vectors to opposing corner
 			var ret = new[]
@@ -431,7 +440,12 @@ namespace OpenRA.Graphics
 			// Transform vectors and find new bounding box
 			for (var i = 0; i < 8; i++)
 			{
-				var vec = new[] { bounds[ix[i]], bounds[iy[i]], bounds[iz[i]], 1 };
+#pragma warning disable CA2014 // Do not use stackalloc in loops
+				Span<float> vec = stackalloc float[4]
+				{
+					bounds[ix[i]], bounds[iy[i]], bounds[iz[i]], 1
+				};
+#pragma warning restore CA2014 // Do not use stackalloc in loops
 				var tvec = MatrixVectorMultiply(mtx, vec);
 
 				ret[0] = Math.Min(ret[0], tvec[0] / tvec[3]);

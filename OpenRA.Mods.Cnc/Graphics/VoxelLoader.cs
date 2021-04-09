@@ -59,8 +59,8 @@ namespace OpenRA.Mods.Cnc.Graphics
 
 		Vertex[] GenerateSlicePlane(int su, int sv, Func<int, int, VxlElement> first, Func<int, int, VxlElement> second, Func<int, int, float3> coord)
 		{
-			var colors = new byte[su * sv];
-			var normals = new byte[su * sv];
+			Span<byte> colors = stackalloc byte[su * sv];
+			Span<byte> normals = stackalloc byte[su * sv];
 
 			var c = 0;
 			for (var v = 0; v < sv; v++)
@@ -115,9 +115,9 @@ namespace OpenRA.Mods.Cnc.Graphics
 			};
 
 			// Cull slices without any visible faces
-			var xPlanes = new bool[l.Size[0] + 1];
-			var yPlanes = new bool[l.Size[1] + 1];
-			var zPlanes = new bool[l.Size[2] + 1];
+			Span<bool> xPlanes = stackalloc bool[l.Size[0] + 1];
+			Span<bool> yPlanes = stackalloc bool[l.Size[1] + 1];
+			Span<bool> zPlanes = stackalloc bool[l.Size[2] + 1];
 			for (var x = 0; x < l.Size[0]; x++)
 			{
 				for (var y = 0; y < l.Size[1]; y++)

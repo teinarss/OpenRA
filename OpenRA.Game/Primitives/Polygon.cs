@@ -87,7 +87,7 @@ namespace OpenRA.Primitives
 				return true;
 
 			// Hard case: check intersection of every line segment pair
-			var rectVertices = new[]
+			Span<int2> rectVertices = stackalloc int2[]
 			{
 				rect.TopLeft,
 				rect.BottomLeft,

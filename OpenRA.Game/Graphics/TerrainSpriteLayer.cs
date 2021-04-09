@@ -116,7 +116,7 @@ namespace OpenRA.Graphics
 			var tl = worldRenderer.TerrainLighting;
 			var pos = map.CenterOfCell(uv.ToCPos(map));
 			var step = map.Grid.Type == MapGridType.RectangularIsometric ? 724 : 512;
-			var weights = new[]
+			Span<float3> weights = stackalloc float3[]
 			{
 				tl.TintAt(pos + new WVec(-step, -step, 0)),
 				tl.TintAt(pos + new WVec(step, -step, 0)),

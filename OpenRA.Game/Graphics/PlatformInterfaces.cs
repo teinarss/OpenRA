@@ -114,7 +114,7 @@ namespace OpenRA
 		void SetVec(string name, float x, float y, float z);
 		void SetVec(string name, float[] vec, int length);
 		void SetTexture(string param, ITexture texture);
-		void SetMatrix(string param, float[] mtx);
+		void SetMatrix(string param, Span<float> mtx);
 		void PrepareRender();
 	}
 

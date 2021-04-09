@@ -9,6 +9,7 @@
  */
 #endregion
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using OpenRA.Primitives;
@@ -103,7 +104,7 @@ namespace OpenRA.Mods.Common.Traits
 
 			// Start at place location, search outwards
 			// TODO: First make it work, then make it nice
-			var vecs = new[] { new CVec(1, 0), new CVec(0, 1), new CVec(-1, 0), new CVec(0, -1) };
+			Span<CVec> vecs = stackalloc CVec[] { new CVec(1, 0), new CVec(0, 1), new CVec(-1, 0), new CVec(0, -1) };
 			int[] dirs = { 0, 0, 0, 0 };
 			Actor[] connectors = { null, null, null, null };
 

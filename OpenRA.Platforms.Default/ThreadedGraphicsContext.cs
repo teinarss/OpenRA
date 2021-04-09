@@ -664,9 +664,9 @@ namespace OpenRA.Platforms.Default
 			device.Post(setBool, (name, value));
 		}
 
-		public void SetMatrix(string param, float[] mtx)
+		public void SetMatrix(string param, Span<float> mtx)
 		{
-			device.Post(setMatrix, (param, mtx));
+			// device.Post(setMatrix, (param, mtx));
 		}
 
 		public void SetTexture(string param, ITexture texture)

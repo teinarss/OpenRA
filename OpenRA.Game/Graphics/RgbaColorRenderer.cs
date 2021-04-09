@@ -275,5 +275,15 @@ namespace OpenRA.Graphics
 				DrawLine(new float3(xc - dx, y, z), new float3(xc + dx, y, z), 1, color, blendMode);
 			}
 		}
+
+		public void DrawLine(Span<float3> points, float screenWidth, Color fromArgb)
+		{
+			
+		}
+
+		public void DrawLine(Span<float3> points, int screenWidth, Color fromArgb, bool connectSegments)
+		{
+			
+		}
 	}
 }

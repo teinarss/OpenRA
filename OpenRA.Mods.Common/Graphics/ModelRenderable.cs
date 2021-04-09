@@ -219,10 +219,12 @@ namespace OpenRA.Mods.Common.Graphics
 			static void DrawBoundsBox(WorldRenderer wr, in float3 pxPos, float[] transform, float[] bounds, float width, Color c)
 			{
 				var cr = Game.Renderer.RgbaColorRenderer;
-				var corners = new float2[8];
+				Span<float2> corners = stackalloc float2[8];
 				for (var i = 0; i < 8; i++)
 				{
-					var vec = new[] { bounds[CornerXIndex[i]], bounds[CornerYIndex[i]], bounds[CornerZIndex[i]], 1 };
+#pragma warning disable CA2014 // Do not use stackalloc in loops
+					Span<float> vec = stackalloc float[] { bounds[CornerXIndex[i]], bounds[CornerYIndex[i]], bounds[CornerZIndex[i]], 1 };
+#pragma warning restore CA2014 // Do not use stackalloc in loops
 					var screen = OpenRA.Graphics.Util.MatrixVectorMultiply(transform, vec);
 					corners[i] = wr.Viewport.WorldToViewPx(pxPos + new float3(screen[0], screen[1], screen[2]));
 				}

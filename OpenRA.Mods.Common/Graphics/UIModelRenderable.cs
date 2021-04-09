@@ -137,7 +137,9 @@ namespace OpenRA.Mods.Common.Graphics
 
 					for (var i = 0; i < 8; i++)
 					{
-						var vec = new float[] { bounds[CornerXIndex[i]], bounds[CornerYIndex[i]], bounds[CornerZIndex[i]], 1 };
+#pragma warning disable CA2014 // Do not use stackalloc in loops
+						Span<float> vec = stackalloc float[] { bounds[CornerXIndex[i]], bounds[CornerYIndex[i]], bounds[CornerZIndex[i]], 1 };
+#pragma warning restore CA2014 // Do not use stackalloc in loops
 						var screen = OpenRA.Graphics.Util.MatrixVectorMultiply(screenTransform, vec);
 						minX = Math.Min(minX, pxPos.X + screen[0]);
 						minY = Math.Min(minY, pxPos.Y + screen[1]);

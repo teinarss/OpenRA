@@ -9,6 +9,7 @@
  */
 #endregion
 
+using System;
 using OpenRA.Graphics;
 using OpenRA.Primitives;
 
@@ -50,10 +51,17 @@ namespace OpenRA.Mods.Common.Graphics
 			var v = new float2(0, 4);
 
 			var cr = Game.Renderer.RgbaColorRenderer;
-			cr.DrawLine(new float3[] { tl + u, tl, tl + v }, 1, color, true);
-			cr.DrawLine(new float3[] { tr - u, tr, tr + v }, 1, color, true);
-			cr.DrawLine(new float3[] { br - u, br, br - v }, 1, color, true);
-			cr.DrawLine(new float3[] { bl + u, bl, bl - v }, 1, color, true);
+			Span<float3> points1 = stackalloc float3[] { tl + u, tl, tl + v };
+			cr.DrawLine(points1, 1, color, true);
+
+			Span<float3> points2 = stackalloc float3[] { tr - u, tr, tr + v };
+			cr.DrawLine(points2, 1, color, true);
+
+			Span<float3> points3 = stackalloc float3[] { br - u, br, br - v };
+			cr.DrawLine(points3, 1, color, true);
+
+			Span<float3> points4 = stackalloc float3[] { bl + u, bl, bl - v };
+			cr.DrawLine(points4, 1, color, true);
 		}
 
 		public void RenderDebugGeometry(WorldRenderer wr) { }

@@ -35,8 +35,8 @@ namespace OpenRA.Primitives
 			var q = (l < 0.5f) ? l * (1 + s) : l + s - (l * s);
 			var p = 2 * l - q;
 
-			float[] trgb = { h + 1 / 3.0f, h, h - 1 / 3.0f };
-			float[] rgb = { 0, 0, 0 };
+			Span<float> trgb = stackalloc float[] { h + 1 / 3.0f, h, h - 1 / 3.0f };
+			Span<float> rgb = stackalloc float[] { 0, 0, 0 };
 
 			for (var k = 0; k < 3; k++)
 			{

@@ -67,7 +67,7 @@ namespace OpenRA.Graphics
 		public void SetViewportParams(Size screen, int2 scroll)
 		{
 			var a = 2f / renderer.SheetSize;
-			var view = new[]
+			Span<float> view = stackalloc float[]
 			{
 				a, 0, 0, 0,
 				0, -a, 0, 0,

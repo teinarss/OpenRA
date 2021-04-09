@@ -257,7 +257,7 @@ namespace OpenRA.Platforms.Default
 			OpenGL.CheckGLError();
 		}
 
-		public void SetMatrix(string name, float[] mtx)
+		public void SetMatrix(string name, Span<float> mtx)
 		{
 			VerifyThreadAffinity();
 			if (mtx.Length != 16)
