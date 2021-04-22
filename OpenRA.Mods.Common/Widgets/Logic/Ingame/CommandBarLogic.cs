@@ -158,7 +158,7 @@ namespace OpenRA.Mods.Common.Widgets
 				{
 					UpdateStateIfNecessary();
 
-					var queued = Game.GetModifierKeys().HasModifier(Modifiers.Shift);
+					var queued = Game.Input.HasModifier(Modifiers.Shift);
 					return !selectedDeploys.Any(pair => pair.Trait.CanIssueDeployOrder(pair.Actor, queued));
 				};
 
@@ -168,7 +168,7 @@ namespace OpenRA.Mods.Common.Widgets
 					if (highlightOnButtonPress)
 						deployHighlighted = 2;
 
-					var queued = Game.GetModifierKeys().HasModifier(Modifiers.Shift);
+					var queued = Game.Input.HasModifier(Modifiers.Shift);
 					PerformDeployOrderOnSelection(queued);
 				};
 
@@ -276,7 +276,7 @@ namespace OpenRA.Mods.Common.Widgets
 			if (world.OrderGenerator is ForceModifiersOrderGenerator fmog && fmog.Modifiers.HasFlag(modifiers))
 				return true;
 
-			if (world.OrderGenerator is UnitOrderGenerator uog && Game.GetModifierKeys().HasFlag(modifiers))
+			if (world.OrderGenerator is UnitOrderGenerator uog && Game.Input.HasModifier(modifiers))
 				return true;
 
 			return false;

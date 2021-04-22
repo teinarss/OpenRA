@@ -81,7 +81,7 @@ namespace OpenRA.Mods.Common.LoadScreens
 
 			Game.Renderer.BeginUI();
 			DisplayInner(Game.Renderer, sheet, density);
-			Game.Renderer.EndFrame(new NullInputHandler());
+			Game.Renderer.EndFrame();
 
 			lastUpdate.Restart();
 		}

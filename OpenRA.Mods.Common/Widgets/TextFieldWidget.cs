@@ -151,7 +151,7 @@ namespace OpenRA.Mods.Common.Widgets
 		int ClosestCursorPosition(int x)
 		{
 			var apparentText = GetApparentText();
-			var font = Game.Renderer.Fonts[Font];
+			var font = Game.FontManager[Font];
 			var textSize = font.Measure(apparentText);
 
 			var start = RenderOrigin.X + LeftMargin;
@@ -356,7 +356,7 @@ namespace OpenRA.Mods.Common.Widgets
 					{
 						var lowestIndex = selectionStartIndex < selectionEndIndex ? selectionStartIndex : selectionEndIndex;
 						var highestIndex = selectionStartIndex < selectionEndIndex ? selectionEndIndex : selectionStartIndex;
-						Game.Renderer.SetClipboardText(Text.Substring(lowestIndex, highestIndex - lowestIndex));
+						Game.Input.SetClipboardText(Text.Substring(lowestIndex, highestIndex - lowestIndex));
 
 						RemoveSelectedText();
 					}
@@ -369,7 +369,7 @@ namespace OpenRA.Mods.Common.Widgets
 					{
 						var lowestIndex = selectionStartIndex < selectionEndIndex ? selectionStartIndex : selectionEndIndex;
 						var highestIndex = selectionStartIndex < selectionEndIndex ? selectionEndIndex : selectionStartIndex;
-						Game.Renderer.SetClipboardText(Text.Substring(lowestIndex, highestIndex - lowestIndex));
+						Game.Input.SetClipboardText(Text.Substring(lowestIndex, highestIndex - lowestIndex));
 					}
 
 					break;
@@ -433,7 +433,7 @@ namespace OpenRA.Mods.Common.Widgets
 
 					if ((!isOSX && e.Modifiers.HasModifier(Modifiers.Ctrl)) || (isOSX && e.Modifiers.HasModifier(Modifiers.Meta)))
 					{
-						var clipboardText = Game.Renderer.GetClipboardText();
+						var clipboardText = Game.Input.GetClipboardText();
 
 						// Take only the first line of the clipboard contents
 						var nl = clipboardText.IndexOf('\n');
@@ -553,7 +553,7 @@ namespace OpenRA.Mods.Common.Widgets
 		public override void Draw()
 		{
 			var apparentText = GetApparentText();
-			var font = Game.Renderer.Fonts[Font];
+			var font = Game.FontManager[Font];
 			var pos = RenderOrigin;
 
 			var textSize = font.Measure(apparentText);

@@ -49,8 +49,12 @@ namespace OpenRA
 
 		public static MersenneTwister CosmeticRandom = new MersenneTwister(); // not synced
 
+		public static FontManager FontManager { get; private set; }
+
 		public static Renderer Renderer;
 		public static Sound Sound;
+
+		public static Input Input;
 
 		public static string EngineVersion { get; private set; }
 		public static LocalPlayerProfile LocalPlayerProfile;
@@ -346,7 +350,17 @@ namespace OpenRA
 						throw new InvalidOperationException("Platform dll must include exactly one IPlatform implementation.");
 
 					var platform = (IPlatform)platformType.GetConstructor(Type.EmptyTypes).Invoke(null);
-					Renderer = new Renderer(platform, Settings.Graphics);
+					var resolution = GetResolution(Settings.Graphics);
+
+					var graphicSettings = Settings.Graphics;
+
+					var window = platform.CreateWindow(new Size(resolution.Width, resolution.Height),
+						graphicSettings.Mode, graphicSettings.UIScale, graphicSettings.BatchSize,
+						graphicSettings.VideoDisplay, graphicSettings.GLProfile, !graphicSettings.DisableLegacyGL);
+
+					FontManager = new FontManager(window);
+
+					Renderer = new Renderer(platform, window, Settings.Graphics);
 					Sound = new Sound(platform, Settings.Sound);
 
 					break;
@@ -410,6 +424,14 @@ namespace OpenRA
 			InitializeMod(modID, args);
 		}
 
+		static Size GetResolution(GraphicSettings graphicsSettings)
+		{
+			var size = (graphicsSettings.Mode == WindowMode.Windowed)
+				? graphicsSettings.WindowedSize
+				: graphicsSettings.FullscreenSize;
+			return new Size(size.X, size.Y);
+		}
+
 		public static void InitializeMod(string mod, Arguments args)
 		{
 			// Clear static state if we have switched mods
@@ -455,7 +477,7 @@ namespace OpenRA
 				ModData.MapCache.LoadMaps();
 
 			ModData.InitializeLoaders(ModData.DefaultFileSystem);
-			Renderer.InitializeFonts(ModData);
+			FontManager.InitializeFonts(ModData);
 
 			var grid = ModData.Manifest.Contains<MapGrid>() ? ModData.Manifest.Get<MapGrid>() : null;
 			Renderer.InitializeDepthBuffer(grid);
@@ -718,7 +740,9 @@ namespace OpenRA
 				}
 
 				using (new PerfSample("render_flip"))
-					Renderer.EndFrame(new DefaultInputHandler(OrderManager.World));
+					Renderer.EndFrame();
+
+				Input.Pump();
 
 				if (takeScreenshot)
 				{
@@ -871,6 +895,7 @@ namespace OpenRA
 			ModData.Dispose();
 			ChromeProvider.Deinitialize();
 
+			FontManager.Dispose();
 			Sound.Dispose();
 			Renderer.Dispose();
 

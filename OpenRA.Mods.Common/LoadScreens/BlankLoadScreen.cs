@@ -38,7 +38,7 @@ namespace OpenRA.Mods.Common.LoadScreens
 
 			// Draw a black screen
 			Game.Renderer.BeginUI();
-			Game.Renderer.EndFrame(new NullInputHandler());
+			Game.Renderer.EndFrame();
 
 			// PERF: draw the screen only once
 			initialized = true;

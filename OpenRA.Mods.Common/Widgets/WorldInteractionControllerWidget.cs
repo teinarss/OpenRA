@@ -54,7 +54,7 @@ namespace OpenRA.Mods.Common.Widgets
 
 		public override void Draw()
 		{
-			var modifiers = Game.GetModifierKeys();
+			var modifiers = Game.Input.GetModifierKeys();
 			IEnumerable<Actor> rollover;
 			if (IsValidDragbox)
 			{
@@ -237,7 +237,7 @@ namespace OpenRA.Mods.Common.Widgets
 				{
 					Location = screenPos,
 					Button = Game.Settings.Game.MouseButtonPreference.Action,
-					Modifiers = Game.GetModifierKeys()
+					Modifiers = Game.Input.GetModifierKeys()
 				};
 
 				return World.OrderGenerator.GetCursor(World, cell, worldPixel, mi);

@@ -186,9 +186,9 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			var gameSettings = Game.Settings.Game;
 
 			if (gameSettings.LockMouseWindow)
-				Game.Renderer.GrabWindowMouseFocus();
+				Game.Input.GrabWindowMouseFocus();
 			else
-				Game.Renderer.ReleaseWindowMouseFocus();
+				Game.Input.ReleaseWindowMouseFocus();
 		}
 	}
 }

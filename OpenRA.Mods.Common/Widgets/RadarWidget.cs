@@ -279,7 +279,7 @@ namespace OpenRA.Mods.Common.Widgets
 			{
 				Location = location,
 				Button = Game.Settings.Game.MouseButtonPreference.Action,
-				Modifiers = Game.GetModifierKeys()
+				Modifiers = Game.Input.GetModifierKeys()
 			};
 
 			var cursor = world.OrderGenerator.GetCursor(world, cell, worldPixel, mi);

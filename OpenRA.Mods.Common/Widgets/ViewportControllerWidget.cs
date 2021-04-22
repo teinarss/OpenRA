@@ -192,7 +192,7 @@ namespace OpenRA.Mods.Common.Widgets
 			else if (!isStandardScrolling)
 			{
 				edgeDirections = ScrollDirection.None;
-				if (Game.Settings.Game.ViewportEdgeScroll && Game.Renderer.WindowHasInputFocus)
+				if (Game.Settings.Game.ViewportEdgeScroll && Game.Input.WindowHasInputFocus)
 					edgeDirections = CheckForDirections();
 
 				if (keyboardDirections != ScrollDirection.None || edgeDirections != ScrollDirection.None)
@@ -222,7 +222,7 @@ namespace OpenRA.Mods.Common.Widgets
 		{
 			TooltipType = WorldTooltipType.None;
 			ActorTooltipExtra = null;
-			var modifiers = Game.GetModifierKeys();
+			var modifiers = Game.Input.GetModifierKeys();
 			var cell = worldRenderer.Viewport.ViewToWorld(Viewport.LastMousePos);
 			if (!world.Map.Contains(cell))
 				return;
