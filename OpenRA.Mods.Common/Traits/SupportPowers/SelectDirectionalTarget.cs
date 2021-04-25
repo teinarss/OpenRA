@@ -39,6 +39,7 @@ namespace OpenRA.Mods.Common.Traits
 		bool dragStarted;
 		Arrow currentArrow;
 		MouseAttachmentWidget mouseAttachment;
+		CursorManager cursorManager;
 
 		public SelectDirectionalTarget(World world, string order, SupportPowerManager manager, string cursor,
 			string directionArrowAnimation, string directionArrowPalette)
@@ -48,6 +49,7 @@ namespace OpenRA.Mods.Common.Traits
 			this.cursor = cursor;
 
 			this.directionArrowPalette = directionArrowPalette;
+			cursorManager = Game.Get<CursorManager>();
 
 			directionArrows = LoadArrows(directionArrowAnimation, world, arrows.Length);
 			mouseAttachment = Ui.Root.Get<MouseAttachmentWidget>("MOUSE_ATTATCHMENT");
@@ -68,7 +70,7 @@ namespace OpenRA.Mods.Common.Traits
 					targetCell = cell;
 					targetLocation = mi.Location;
 					activated = true;
-					Game.Cursor.Lock();
+					cursorManager.Lock();
 				}
 
 				yield break;
@@ -131,7 +133,7 @@ namespace OpenRA.Mods.Common.Traits
 			if (activated)
 			{
 				mouseAttachment.Reset();
-				Game.Cursor.Unlock();
+				cursorManager.Unlock();
 			}
 		}
 

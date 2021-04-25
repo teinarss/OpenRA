@@ -20,6 +20,7 @@ using System.Reflection;
 using System.Runtime;
 using System.Threading;
 using System.Threading.Tasks;
+using Grace.DependencyInjection;
 using OpenRA.Graphics;
 using OpenRA.Network;
 using OpenRA.Primitives;
@@ -278,6 +279,8 @@ namespace OpenRA
 
 		static void Initialize(Arguments args)
 		{
+			container = new DependencyInjectionContainer();
+
 			var engineDirArg = args.GetValue("Engine.EngineDir", null);
 			if (!string.IsNullOrEmpty(engineDirArg))
 				Platform.OverrideEngineDir(engineDirArg);
@@ -348,6 +351,9 @@ namespace OpenRA
 					var platform = (IPlatform)platformType.GetConstructor(Type.EmptyTypes).Invoke(null);
 					Renderer = new Renderer(platform, Settings.Graphics);
 					Sound = new Sound(platform, Settings.Sound);
+
+					container.Configure(c => c.ExportInstance(Sound));
+					container.Configure(c => c.ExportInstance(Renderer));
 
 					break;
 				}
@@ -463,7 +469,10 @@ namespace OpenRA
 
 			Cursor?.Dispose();
 
-			Cursor = new CursorManager(ModData.CursorProvider);
+			var cursorManager = new CursorManager(ModData.CursorProvider);
+			container.Configure(c => c.ExportInstance(cursorManager));
+
+			Cursor = cursorManager;
 
 			PerfHistory.Items["render"].HasNormalTick = false;
 			PerfHistory.Items["batches"].HasNormalTick = false;
@@ -548,6 +557,7 @@ namespace OpenRA
 		static Color systemMessageColor = Color.White;
 		static Color chatMessageColor = Color.White;
 		static string systemMessageLabel;
+		static DependencyInjectionContainer container;
 
 		public static void RunAfterTick(Action a) { delayedActions.Add(a, RunTime); }
 		public static void RunAfterDelay(int delayMilliseconds, Action a) { delayedActions.Add(a, RunTime + delayMilliseconds); }
@@ -997,6 +1007,11 @@ namespace OpenRA
 				benchmark.Write();
 				Exit();
 			}
+		}
+
+		public static T Get<T>()
+		{
+			return container.Locate<T>();
 		}
 	}
 }
