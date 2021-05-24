@@ -13,6 +13,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -48,7 +49,7 @@ namespace OpenRA.Network
 			public byte[] Data;
 		}
 
-		readonly List<ReceivedPacket> receivedPackets = new List<ReceivedPacket>();
+		readonly ConcurrentQueue<ReceivedPacket> receivedPackets = new ConcurrentQueue<ReceivedPacket>();
 		public ReplayRecorder Recorder { get; private set; }
 
 		public virtual int LocalClientId => 1;
@@ -96,23 +97,15 @@ namespace OpenRA.Network
 
 		protected void AddPacket(ReceivedPacket packet)
 		{
-			lock (receivedPackets)
-				receivedPackets.Add(packet);
+			receivedPackets.Enqueue(packet);
 		}
 
 		public virtual void Receive(Action<int, byte[]> packetFn)
 		{
-			ReceivedPacket[] packets;
-			lock (receivedPackets)
+			while (receivedPackets.TryDequeue(out var received))
 			{
-				packets = receivedPackets.ToArray();
-				receivedPackets.Clear();
-			}
-
-			foreach (var p in packets)
-			{
-				packetFn(p.FromClient, p.Data);
-				Recorder?.Receive(p.FromClient, p.Data);
+				packetFn(received.FromClient, received.Data);
+				Recorder?.Receive(received.FromClient, received.Data);
 			}
 		}
 
@@ -276,20 +269,43 @@ namespace OpenRA.Network
 		{
 			base.Send(packet);
 
+			var ms = new MemoryStream();
+			WriteOrderPacket(ms, packet);
+			WriteQueuedSyncPackets(ms);
+			SendNetwork(ms);
+		}
+
+		void WriteOrderPacket(MemoryStream ms, byte[] packet)
+		{
+			ms.WriteArray(BitConverter.GetBytes(packet.Length));
+			ms.WriteArray(packet);
+		}
+
+		void WriteQueuedSyncPackets(MemoryStream ms)
+		{
+			if (queuedSyncPackets.Any())
+			{
+				var listLengthNeeded = queuedSyncPackets.Sum(i => 4 + i.Length);
+				if (ms.Capacity - ms.Length < listLengthNeeded)
+					ms.Capacity += listLengthNeeded - (ms.Capacity - (int)ms.Length);
+			}
+			else
+				return;
+
+			foreach (var q in queuedSyncPackets)
+			{
+				ms.WriteArray(BitConverter.GetBytes(q.Length));
+				ms.WriteArray(q);
+				base.Send(q);
+			}
+
+			queuedSyncPackets.Clear();
+		}
+
+		void SendNetwork(MemoryStream ms)
+		{
 			try
 			{
-				var ms = new MemoryStream();
-				ms.WriteArray(BitConverter.GetBytes(packet.Length));
-				ms.WriteArray(packet);
-
-				foreach (var q in queuedSyncPackets)
-				{
-					ms.WriteArray(BitConverter.GetBytes(q.Length));
-					ms.WriteArray(q);
-					base.Send(q);
-				}
-
-				queuedSyncPackets.Clear();
 				ms.WriteTo(tcp.GetStream());
 			}
 			catch (SocketException) { /* drop this on the floor; we'll pick up the disconnect from the reader thread */ }
