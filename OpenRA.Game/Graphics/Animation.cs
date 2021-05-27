@@ -10,6 +10,7 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using OpenRA.Primitives;
 using OpenRA.Support;
@@ -56,12 +57,15 @@ namespace OpenRA.Graphics
 		{
 			var tintModifiers = CurrentSequence.IgnoreWorldTint ? TintModifiers.IgnoreWorldTint : TintModifiers.None;
 			var alpha = CurrentSequence.GetAlpha(CurrentFrame);
-			var imageRenderable = new SpriteRenderable(Image, pos, offset, CurrentSequence.ZOffset + zOffset, palette, CurrentSequence.Scale, alpha, float3.Ones, tintModifiers, IsDecoration);
+
+			var imageRenderable = Game.Pool.Get();
+			imageRenderable.Init(Image, pos, offset, CurrentSequence.ZOffset + zOffset, palette, CurrentSequence.Scale, alpha, float3.Ones, tintModifiers, IsDecoration);
 
 			if (CurrentSequence.ShadowStart >= 0)
 			{
 				var shadow = CurrentSequence.GetShadow(CurrentFrame, facingFunc());
-				var shadowRenderable = new SpriteRenderable(shadow, pos, offset, CurrentSequence.ShadowZOffset + zOffset, palette, CurrentSequence.Scale, 1f, float3.Ones, tintModifiers, true);
+				var shadowRenderable = Game.Pool.Get();
+				shadowRenderable.Init(shadow, pos, offset, CurrentSequence.ShadowZOffset + zOffset, palette, CurrentSequence.Scale, 1f, float3.Ones, tintModifiers, true);
 				return new IRenderable[] { shadowRenderable, imageRenderable };
 			}
 
@@ -242,6 +246,24 @@ namespace OpenRA.Graphics
 		public string GetRandomExistingSequence(string[] sequences, MersenneTwister random)
 		{
 			return sequences.Where(s => HasSequence(s)).RandomOrDefault(random);
+		}
+	}
+
+	public class RenderblesPool
+	{
+		Stack<SpriteRenderable> renderables = new Stack<SpriteRenderable>();
+
+		public SpriteRenderable Get()
+		{
+			if (renderables.TryPop(out var renderable))
+				return renderable;
+
+			return new SpriteRenderable();
+		}
+
+		public void Return(SpriteRenderable renderable)
+		{
+			renderables.Push(renderable);
 		}
 	}
 }

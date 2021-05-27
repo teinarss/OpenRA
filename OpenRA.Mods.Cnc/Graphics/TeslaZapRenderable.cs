@@ -89,6 +89,9 @@ namespace OpenRA.Mods.Cnc.Graphics
 		}
 
 		public Rectangle ScreenBounds(WorldRenderer wr) { return Rectangle.Empty; }
+		public void Release()
+		{
+		}
 
 		public IEnumerable<IFinalizedRenderable> GenerateRenderables(WorldRenderer wr)
 		{

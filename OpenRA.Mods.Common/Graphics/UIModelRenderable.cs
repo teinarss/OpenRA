@@ -109,6 +109,10 @@ namespace OpenRA.Mods.Common.Graphics
 				return Screen3DBounds(wr).Bounds;
 			}
 
+			public void Release()
+			{
+			}
+
 			static readonly uint[] CornerXIndex = { 0, 0, 0, 0, 3, 3, 3, 3 };
 			static readonly uint[] CornerYIndex = { 1, 1, 4, 4, 1, 1, 4, 4 };
 			static readonly uint[] CornerZIndex = { 2, 5, 2, 5, 2, 5, 2, 5 };

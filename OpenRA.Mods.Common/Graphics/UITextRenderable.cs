@@ -65,5 +65,8 @@ namespace OpenRA.Mods.Common.Graphics
 		}
 
 		public Rectangle ScreenBounds(WorldRenderer wr) { return Rectangle.Empty; }
+		public void Release()
+		{
+		}
 	}
 }

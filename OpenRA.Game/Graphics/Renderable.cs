@@ -56,5 +56,6 @@ namespace OpenRA.Graphics
 		void Render(WorldRenderer wr);
 		void RenderDebugGeometry(WorldRenderer wr);
 		Rectangle ScreenBounds(WorldRenderer wr);
+		void Release();
 	}
 }

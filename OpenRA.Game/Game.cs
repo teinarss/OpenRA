@@ -57,6 +57,7 @@ namespace OpenRA
 
 		static bool takeScreenshot = false;
 		static Benchmark benchmark = null;
+		public static RenderblesPool Pool = new RenderblesPool();
 
 		public static event Action OnShellmapLoaded = () => { };
 

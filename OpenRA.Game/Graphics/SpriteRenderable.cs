@@ -18,18 +18,42 @@ namespace OpenRA.Graphics
 	{
 		public static readonly IEnumerable<IRenderable> None = new IRenderable[0];
 
-		readonly Sprite sprite;
-		readonly WPos pos;
-		readonly WVec offset;
-		readonly int zOffset;
-		readonly PaletteReference palette;
-		readonly float scale;
-		readonly float3 tint;
-		readonly TintModifiers tintModifiers;
-		readonly float alpha;
-		readonly bool isDecoration;
+		Sprite sprite;
+		WPos pos;
+		WVec offset;
+		int zOffset;
+		PaletteReference palette;
+		float scale;
+		float3 tint;
+		TintModifiers tintModifiers;
+		float alpha;
+		bool isDecoration;
+
+		public SpriteRenderable()
+		{
+		}
 
 		public SpriteRenderable(Sprite sprite, WPos pos, WVec offset, int zOffset, PaletteReference palette, float scale, float alpha, float3 tint, TintModifiers tintModifiers, bool isDecoration)
+		{
+			this.sprite = sprite;
+			this.pos = pos;
+			this.offset = offset;
+			this.zOffset = zOffset;
+			this.palette = palette;
+			this.scale = scale;
+			this.tint = tint;
+			this.isDecoration = isDecoration;
+			this.tintModifiers = tintModifiers;
+			this.alpha = alpha;
+
+			// PERF: Remove useless palette assignments for RGBA sprites
+			// HACK: This is working around the fact that palettes are defined on traits rather than sequences
+			// and can be removed once this has been fixed
+			if (sprite.Channel == TextureChannel.RGBA && !(palette?.HasColorShift ?? false))
+				this.palette = null;
+		}
+
+		public void Init(Sprite sprite, WPos pos, WVec offset, int zOffset, PaletteReference palette, float scale, float alpha, float3 tint, TintModifiers tintModifiers, bool isDecoration)
 		{
 			this.sprite = sprite;
 			this.pos = pos;
@@ -110,6 +134,11 @@ namespace OpenRA.Graphics
 		{
 			var screenOffset = ScreenPosition(wr) + sprite.Offset;
 			return new Rectangle((int)screenOffset.X, (int)screenOffset.Y, (int)sprite.Size.X, (int)sprite.Size.Y);
+		}
+
+		public void Release()
+		{
+			Game.Pool.Return(this);
 		}
 	}
 }

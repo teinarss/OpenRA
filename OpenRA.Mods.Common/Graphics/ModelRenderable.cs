@@ -245,6 +245,10 @@ namespace OpenRA.Mods.Common.Graphics
 				return Screen3DBounds(wr).Bounds;
 			}
 
+			public void Release()
+			{
+			}
+
 			(Rectangle Bounds, float2 Z) Screen3DBounds(WorldRenderer wr)
 			{
 				var pxOrigin = wr.ScreenPosition(model.pos);

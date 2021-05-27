@@ -340,6 +340,11 @@ namespace OpenRA.Graphics
 
 			Game.Renderer.Flush();
 
+			foreach (var renderable in preparedRenderables)
+			{
+				renderable.Release();
+			}
+
 			preparedRenderables.Clear();
 			preparedOverlayRenderables.Clear();
 			preparedAnnotationRenderables.Clear();

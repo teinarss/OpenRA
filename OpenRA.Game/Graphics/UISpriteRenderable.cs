@@ -70,5 +70,9 @@ namespace OpenRA.Graphics
 			var offset = screenPos + sprite.Offset;
 			return new Rectangle((int)offset.X, (int)offset.Y, (int)sprite.Size.X, (int)sprite.Size.Y);
 		}
+
+		public void Release()
+		{
+		}
 	}
 }
