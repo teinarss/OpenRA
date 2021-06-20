@@ -11,6 +11,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace OpenRA.Primitives
 {
@@ -20,34 +21,44 @@ namespace OpenRA.Primitives
 	public class ActionQueue
 	{
 		readonly List<DelayedAction> actions = new List<DelayedAction>();
+		SpinLock spinLock;
 
 		public void Add(Action a, long desiredTime)
 		{
 			if (a == null)
 				throw new ArgumentNullException(nameof(a));
 
-			lock (actions)
-			{
-				var action = new DelayedAction(a, desiredTime);
-				var index = Index(action);
-				actions.Insert(index, action);
-			}
+			var gotLock = false;
+			if (!spinLock.IsHeldByCurrentThread)
+				spinLock.Enter(ref gotLock);
+
+			var action = new DelayedAction(a, desiredTime);
+			var index = Index(action);
+			actions.Insert(index, action);
+
+			if (gotLock)
+				spinLock.Exit(true);
 		}
 
 		public void PerformActions(long currentTime)
 		{
 			DelayedAction[] pendingActions;
-			lock (actions)
-			{
-				var dummyAction = new DelayedAction(null, currentTime);
-				var index = Index(dummyAction);
-				if (index <= 0)
-					return;
 
-				pendingActions = new DelayedAction[index];
-				actions.CopyTo(0, pendingActions, 0, index);
-				actions.RemoveRange(0, index);
-			}
+			var gotLock = false;
+			if (!spinLock.IsHeldByCurrentThread)
+				 spinLock.Enter(ref gotLock);
+
+			var dummyAction = new DelayedAction(null, currentTime);
+			var index = Index(dummyAction);
+			if (index <= 0)
+				return;
+
+			pendingActions = new DelayedAction[index];
+			actions.CopyTo(0, pendingActions, 0, index);
+			actions.RemoveRange(0, index);
+
+			if (gotLock)
+				spinLock.Exit(true);
 
 			foreach (var delayedAction in pendingActions)
 				delayedAction.Action();
